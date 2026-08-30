@@ -119,8 +119,7 @@ export default function MomLogin() {
   };
 
   return (
-    <Screen>
-      <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 20% 0%, ${C.blushLight} 0%, transparent 55%), radial-gradient(ellipse at 90% 80%, ${C.sageLight} 0%, transparent 50%)` }} />
+    <Screen ambient={false} style={{ background: C.cream }}>
       <div className="max-w-md mx-auto relative">
         <div className="flex items-center justify-between mb-8">
           <Logo />

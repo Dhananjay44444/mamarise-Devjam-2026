@@ -114,7 +114,7 @@ export function MiniRing({ pct = 0, color = C.sage, size = 56, strokeWidth = 5.5
   );
 }
 
-export function Screen({ children, dark = false, className = "" }) {
+export function Screen({ children, dark = false, ambient = true, className = "", style = {} }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
@@ -125,33 +125,38 @@ export function Screen({ children, dark = false, className = "" }) {
       style={{
         background: dark ? C.obsidian : C.cream,
         color: dark ? C.cream : C.ink,
+        ...style,
       }}
     >
-      {/* Background ambient lighting layers */}
-      <div
-        className="absolute rounded-full pointer-events-none filter blur-[110px] opacity-60"
-        style={{
-          width: 520,
-          height: 520,
-          left: "-10%",
-          top: "-5%",
-          background: dark
-            ? "radial-gradient(circle, rgba(95,135,102,0.22) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(248,221,210,0.7) 0%, transparent 70%)",
-        }}
-      />
-      <div
-        className="absolute rounded-full pointer-events-none filter blur-[120px] opacity-60"
-        style={{
-          width: 480,
-          height: 480,
-          right: "-12%",
-          bottom: "5%",
-          background: dark
-            ? "radial-gradient(circle, rgba(134,197,144,0.18) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(223,234,220,0.85) 0%, transparent 70%)",
-        }}
-      />
+      {ambient && (
+        <>
+          {/* Background ambient lighting layers */}
+          <div
+            className="absolute rounded-full pointer-events-none filter blur-[110px] opacity-60"
+            style={{
+              width: 520,
+              height: 520,
+              left: "-10%",
+              top: "-5%",
+              background: dark
+                ? "radial-gradient(circle, rgba(95,135,102,0.22) 0%, transparent 70%)"
+                : "radial-gradient(circle, rgba(248,221,210,0.7) 0%, transparent 70%)",
+            }}
+          />
+          <div
+            className="absolute rounded-full pointer-events-none filter blur-[120px] opacity-60"
+            style={{
+              width: 480,
+              height: 480,
+              right: "-12%",
+              bottom: "5%",
+              background: dark
+                ? "radial-gradient(circle, rgba(134,197,144,0.18) 0%, transparent 70%)"
+                : "radial-gradient(circle, rgba(223,234,220,0.85) 0%, transparent 70%)",
+            }}
+          />
+        </>
+      )}
       <div className="relative z-10 flex-1">{children}</div>
     </motion.div>
   );
