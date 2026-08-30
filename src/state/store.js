@@ -695,22 +695,28 @@ export function appReducer(state, action) {
       };
     }
 
+    case "VOICE_UPDATE_RECOVERY":
     case "VOICE_LOG_RECOVERY": {
-      const { sleepHours, energy, pain, mood, notes, rawTranscript } = action.payload;
+      const { sleepHours, energy, pain, mood, notes, rawTranscript } = action.payload || {};
+      const safeSleepHours = sleepHours !== undefined && sleepHours !== null ? Number(sleepHours) : (state.recovery?.sleepHours ?? 8);
+      const safeEnergy = energy || (safeSleepHours >= 8 ? "Good" : safeSleepHours < 5 ? "Low" : "Okay");
+      const safePain = pain || state.recovery?.pain || "None";
+      const safeMood = mood || state.recovery?.mood || (safeEnergy === "Good" ? "Good" : "Okay");
+
       const updatedRecovery = {
-        sleepHours: sleepHours ?? state.recovery?.sleepHours ?? 6,
-        energy: energy || state.recovery?.energy || "Okay",
-        pain: pain || state.recovery?.pain || "Mild",
-        mood: mood || state.recovery?.mood || "Okay",
-        notes: notes || rawTranscript,
+        sleepHours: safeSleepHours,
+        energy: safeEnergy,
+        pain: safePain,
+        mood: safeMood,
+        notes: notes || rawTranscript || "",
       };
 
       const historyEntry = {
         id: Date.now(),
         transcript: rawTranscript,
         intent: "LOG_RECOVERY",
-        entities: { sleepHours, energy, pain, mood },
-        result: `Logged recovery: ${updatedRecovery.sleepHours}h sleep · ${updatedRecovery.energy} energy · ${updatedRecovery.pain} pain`,
+        entities: { sleepHours: safeSleepHours, energy: safeEnergy, pain: safePain, mood: safeMood },
+        result: `Logged recovery: ${safeSleepHours}h sleep · ${safeEnergy} energy · ${safeMood} mood · ${safePain} pain`,
         timestamp: Date.now(),
         status: "success",
       };
@@ -718,14 +724,14 @@ export function appReducer(state, action) {
       return {
         ...state,
         recovery: updatedRecovery,
-        energyLevel: updatedRecovery.energy,
-        mood: updatedRecovery.mood,
+        energyLevel: safeEnergy,
+        mood: safeMood,
         voiceCommandHistory: [historyEntry, ...state.voiceCommandHistory],
         notifications: [
           {
             id: Date.now(),
             type: "recovery",
-            text: `Voice Triage: Logged ${updatedRecovery.sleepHours}h sleep & ${updatedRecovery.energy} energy`,
+            text: `Voice Triage: Logged ${safeSleepHours}h sleep & ${safeEnergy} energy`,
             read: false,
             createdAt: Date.now(),
           },

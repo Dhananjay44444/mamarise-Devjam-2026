@@ -165,11 +165,28 @@ class GeminiService:
                 "task_name": "Completed Item",
                 "empathetic_reply": "Wonderful job. Every small step matters, and your recovery is moving forward beautifully."
             }
-        elif "tired" in lower or "exhaust" in lower or "sleep" in lower or "pain" in lower:
+        elif any(k in lower for k in ["sleep", "slept", "energy", "tired", "exhaust", "pain", "mood", "feeling", "feel", "hours", "hrs"]):
+            import re
+            hours_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)', lower) or re.search(r'slept\s*(?:for\s*)?(\d+(?:\.\d+)?)', lower)
+            sleep_hours = float(hours_match.group(1)) if hours_match else 8.0
+            
+            energy = "Good" if any(w in lower for w in ["good", "great", "high", "refreshed", "well", "fine", "energetic"]) else ("Low" if any(w in lower for w in ["tired", "exhaust", "low", "drained", "heavy"]) else "Okay")
+            mood = "Good" if any(w in lower for w in ["good", "great", "happy", "fine", "optimistic"]) else ("Tired" if any(w in lower for w in ["tired", "exhaust"]) else "Okay")
+            pain = "Severe" if "severe" in lower else ("Mild" if "mild" in lower else "None")
+            
+            display_hrs = int(sleep_hours) if sleep_hours.is_integer() else sleep_hours
+            if energy == "Good":
+                reply = f"Wonderful to hear you got {display_hrs} hours of restorative sleep and are feeling good! Your postpartum recovery is progressing beautifully."
+            else:
+                reply = "Thank you for letting me know. Your body has done monumental work—please allow yourself to pause without any guilt."
+            
             return {
                 "intent": "LOG_RECOVERY",
-                "energy": "Low",
-                "empathetic_reply": "Thank you for letting me know. Your body has done monumental work—please allow yourself to pause without any guilt."
+                "energy": energy,
+                "sleep_hours": sleep_hours,
+                "pain": pain,
+                "mood": mood,
+                "empathetic_reply": reply
             }
         
         return {

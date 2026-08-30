@@ -57,15 +57,15 @@ async def process_voice_command(
         }
         summary_message = f'Marked "{task_name}" as complete.'
     elif intent == "LOG_RECOVERY":
-        action_type = "VOICE_UPDATE_RECOVERY"
+        action_type = "VOICE_LOG_RECOVERY"
         action_payload = {
-            "energy": gemini_data.get("energy", "Low"),
-            "sleepHours": gemini_data.get("sleep_hours", 5),
+            "energy": gemini_data.get("energy", "Good" if "good" in transcript.lower() else "Okay"),
+            "sleepHours": gemini_data.get("sleep_hours") or gemini_data.get("sleepHours") or 8,
             "pain": gemini_data.get("pain", "None"),
-            "mood": gemini_data.get("mood", "Tired"),
+            "mood": gemini_data.get("mood", "Good" if "good" in transcript.lower() else "Okay"),
             "rawTranscript": transcript,
         }
-        summary_message = f'Logged recovery update via voice.'
+        summary_message = f'Logged recovery: {action_payload["sleepHours"]}h sleep · {action_payload["energy"]} energy.'
 
     # Persist interaction into database
     try:

@@ -13,14 +13,29 @@ function cleanText(text) {
  */
 function extractSleepHours(text) {
   if (/remind\s+me|set\s+(?:a\s+)?reminder/i.test(text)) return null;
-  const match = text.match(/slept\s*(?:for\s*)?(\d+)\s*(?:hours?|hrs?)?/i) || text.match(/(\d+)\s*(?:hours?|hrs?)\s*(?:of\s*)?sleep/i) || text.match(/(\d+)\s*(?:hours?|hrs?)\s*last\s*night/i);
-  if (match) return parseInt(match[1], 10);
-  if (/slept\s*(?:for\s*)?five/i.test(text)) return 5;
-  if (/slept\s*(?:for\s*)?six/i.test(text)) return 6;
-  if (/slept\s*(?:for\s*)?seven/i.test(text)) return 7;
-  if (/slept\s*(?:for\s*)?eight/i.test(text)) return 8;
-  if (/slept\s*(?:for\s*)?four/i.test(text)) return 4;
-  if (/slept\s*(?:for\s*)?three/i.test(text)) return 3;
+  const t = text.toLowerCase();
+  
+  // Digit match (e.g. "slept for 10 hrs", "10 hours", "got 8.5 hours", "slept 10")
+  const match =
+    t.match(/(?:slept(?:\s+for)?|got|had|with)\s*(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)?/i) ||
+    t.match(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)\s*(?:of\s*)?sleep/i) ||
+    t.match(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)\s*(?:last\s*night|today|rest)?/i) ||
+    t.match(/slept\s*(\d+(?:\.\d+)?)/i);
+
+  if (match) return parseFloat(match[1]);
+
+  // Word numbers (e.g. "ten hours", "eight hrs", "seven")
+  const wordMap = {
+    one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12
+  };
+  for (const [word, val] of Object.entries(wordMap)) {
+    if (
+      new RegExp(`(?:slept(?:\\s+for)?|got|had)\\s+${word}\\s*(?:hours?|hrs?)?`, "i").test(t) ||
+      new RegExp(`${word}\\s*(?:hours?|hrs?)\\s*(?:of\\s*)?sleep`, "i").test(t)
+    ) {
+      return val;
+    }
+  }
   return null;
 }
 
@@ -28,9 +43,10 @@ function extractSleepHours(text) {
  * Extracts energy level from speech
  */
 function extractEnergy(text) {
-  if (/exhausted|tired|drained|very low|no energy|fatigued|heavy/i.test(text)) return "Low";
-  if (/good|high|refreshed|energetic|great|fine/i.test(text)) return "Good";
-  if (/okay|moderate|decent|average|alright/i.test(text)) return "Okay";
+  const t = text.toLowerCase();
+  if (/\b(?:good|great|high|refreshed|energetic|fine|amazing|well|super|boosted|strong)\b/i.test(t)) return "Good";
+  if (/\b(?:okay|moderate|decent|average|alright|stable|neutral)\b/i.test(t)) return "Okay";
+  if (/\b(?:exhausted|tired|drained|very low|no energy|fatigued|heavy|low|depleted|sleepy)\b/i.test(t)) return "Low";
   return null;
 }
 
@@ -38,22 +54,24 @@ function extractEnergy(text) {
  * Extracts pain level from speech
  */
 function extractPain(text) {
-  if (/severe\s*(?:back\s*)?pain|hurts\s+a\s+lot|extreme\s*pain|intense\s*pain|heavy\s*pain/i.test(text)) return "Severe";
-  if (/mild\s*(?:back\s*)?pain|slight\s*pain|a\s*bit\s*sore|little\s*sore|soreness|mild/i.test(text)) return "Mild";
-  if (/moderate\s*pain/i.test(text)) return "Moderate";
-  if (/no\s*pain|pain\s*free|feeling\s*fine/i.test(text)) return "None";
-  if (/pain|hurts|ache/i.test(text)) return "Moderate";
-  return null;
+  const t = text.toLowerCase();
+  if (/severe\s*(?:back\s*)?pain|hurts\s+a\s+lot|extreme\s*pain|intense\s*pain|heavy\s*pain/i.test(t)) return "Severe";
+  if (/moderate\s*pain/i.test(t)) return "Moderate";
+  if (/mild\s*(?:back\s*)?pain|slight\s*pain|a\s*bit\s*sore|little\s*sore|soreness|mild/i.test(t)) return "Mild";
+  if (/no\s*pain|pain\s*free|zero\s*pain/i.test(t)) return "None";
+  if (/pain|hurts|ache/i.test(t)) return "Moderate";
+  return "None";
 }
 
 /**
  * Extracts mood from speech
  */
 function extractMood(text) {
-  if (/overwhelmed|down|sad|crying|anxious|stressed|gloomy/i.test(text)) return "Low";
-  if (/happy|great|cheerful|optimistic|confident|proud/i.test(text)) return "Good";
-  if (/okay|fine|calm|holding up|stable/i.test(text)) return "Okay";
-  if (/tired|exhausted/i.test(text)) return "Tired";
+  const t = text.toLowerCase();
+  if (/\b(?:happy|great|cheerful|optimistic|confident|proud|good|joyful|peaceful|positive)\b/i.test(t)) return "Good";
+  if (/\b(?:okay|fine|calm|holding up|stable|neutral)\b/i.test(t)) return "Okay";
+  if (/\b(?:overwhelmed|down|sad|crying|anxious|stressed|gloomy|low|struggling)\b/i.test(t)) return "Low";
+  if (/\b(?:tired|exhausted|sleepy)\b/i.test(t)) return "Tired";
   return null;
 }
 
@@ -315,16 +333,21 @@ export function parseVoiceIntent(rawTranscript, context = {}) {
   const hasPain = extractPain(text);
   const hasMood = extractMood(text);
 
-  if (hasSleep !== null || (hasEnergy && hasPain) || /(?:check-in|triage|slept|my\s+energy|my\s+pain)/i.test(text)) {
-    const sleepHours = hasSleep !== null ? hasSleep : context.recovery?.sleepHours || 6;
-    const energy = hasEnergy || "Okay";
-    const pain = hasPain || "Mild";
-    const mood = hasMood || "Okay";
+  if (
+    hasSleep !== null ||
+    (hasEnergy && (hasMood || text.includes("feeling") || text.includes("feel"))) ||
+    (hasEnergy && hasPain !== "None") ||
+    /(?:check-in|triage|slept|sleep|my\s+energy|my\s+pain|feeling\s+good|feeling\s+tired|feeling\s+exhausted)/i.test(text)
+  ) {
+    const sleepHours = hasSleep !== null ? hasSleep : (context.recovery?.sleepHours || 8);
+    const energy = hasEnergy || (sleepHours >= 8 ? "Good" : sleepHours < 5 ? "Low" : "Okay");
+    const pain = hasPain || "None";
+    const mood = hasMood || (energy === "Good" ? "Good" : energy === "Low" ? "Tired" : "Okay");
 
     return {
       rawTranscript,
       intent: "LOG_RECOVERY",
-      confidence: 0.93,
+      confidence: 0.95,
       entities: {
         sleepHours,
         energy,
@@ -332,7 +355,7 @@ export function parseVoiceIntent(rawTranscript, context = {}) {
         mood,
         notes: rawTranscript,
       },
-      summaryMessage: `Logged recovery triage: ${sleepHours}h sleep · ${energy} energy · ${pain} pain.`,
+      summaryMessage: `Logged recovery update: ${sleepHours}h sleep · ${energy} energy · ${mood} mood · ${pain} pain.`,
       stateAction: {
         type: "VOICE_LOG_RECOVERY",
         payload: {
