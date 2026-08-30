@@ -9,6 +9,7 @@ import {
 import { C, fadeUp, stagger } from "../theme";
 import { Screen, Card, Button, TopBar, MiniRing } from "../ui/chrome";
 import { Doodle } from "../ui/Doodles";
+import { useAppState, selectChoreSplit } from "../state/store";
 
 function capacityLabel(recovery) {
   if (!recovery) return "Pending Check-in";
@@ -69,15 +70,34 @@ function JourneyThread({ active = 1, compact = false }) {
 }
 
 export default function MomDashboard({
-  user,
-  recovery,
-  choreSplit,
-  capacityHrs,
-  skills = [],
+  user: propUser,
+  recovery: propRecovery,
+  choreSplit: propChoreSplit,
+  capacityHrs: propCapacityHrs,
+  skills: propSkills,
   go,
   onLogout,
 }) {
+  const { state } = useAppState();
+  const user = propUser || state.currentUser || {};
+  const recovery = state.recovery !== undefined ? state.recovery : propRecovery;
+  const choreSplit = propChoreSplit || selectChoreSplit(state);
+  const skills = propSkills || state.microtasks || [];
+
   const capText = capacityLabel(recovery);
+  const capacityHrs =
+    propCapacityHrs !== undefined
+      ? propCapacityHrs
+      : (() => {
+          let base = 8;
+          if (recovery) {
+            const cap = capacityLabel(recovery);
+            base = cap === "Low Capacity" ? 3 : cap === "Moderate Capacity" ? 6 : 9;
+          }
+          const loadPenalty = (choreSplit?.me || 0) > 55 ? 2 : 0;
+          return Math.max(2, base - loadPenalty);
+        })();
+
   const doneSkillsCount = skills.filter((s) => s.done).length;
   const isTriageUrgent = recovery?.pain === "Severe" || (recovery?.mood === "Low" && recovery?.energy === "Low");
 

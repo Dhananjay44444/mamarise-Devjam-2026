@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Moon, Battery, Heart, ChevronRight } from "lucide-react";
 import { C, fadeUp, stagger, shadows } from "../theme";
 import { Screen, Card, Button, TopBar } from "../ui/chrome";
+import { useAppState } from "../state/store";
 
 function getTriage({ sleepHours, energy, pain, mood }) {
   if (pain === "Severe" || (mood === "Low" && energy === "Low" && sleepHours < 3)) return "URGENT";
@@ -40,7 +41,10 @@ function capacityLabel({ sleepHours, energy }) {
   return "Good (~9 hrs)";
 }
 
-export default function CheckinResult({ recovery, go }) {
+export default function CheckinResult({ recovery: propRecovery, go }) {
+  const { state } = useAppState();
+  const recovery = state.recovery || propRecovery;
+
   if (!recovery) {
     go("dashboard");
     return null;
