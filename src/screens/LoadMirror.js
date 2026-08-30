@@ -10,7 +10,6 @@ import {
   Send,
   CheckCheck,
   Zap,
-  RefreshCw,
   UserCheck,
 } from "lucide-react";
 import { C } from "../theme";
@@ -32,7 +31,6 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
   const [helpUrgency, setHelpUrgency] = useState("High");
 
   const [aiSuggestions, setAiSuggestions] = useState([]);
-  const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [rebalanceNotification, setRebalanceNotification] = useState(null);
 
   const pending = chores.filter((c) => c.status === "pending");
@@ -48,7 +46,6 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
 
   // Load AI Rebalancing Suggestions from Gemini
   const loadAiSuggestions = async () => {
-    setIsLoadingAi(true);
     try {
       const suggestions = await fetchAiRebalanceSuggestions(
         recovery || {},
@@ -61,8 +58,6 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
       }
     } catch (err) {
       console.warn("Failed to fetch AI suggestions:", err);
-    } finally {
-      setIsLoadingAi(false);
     }
   };
 
@@ -428,39 +423,25 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
                 </div>
               </Card>
 
-              {/* Gemini AI Smart Rebalance Intelligence */}
+              {/* Smart Rebalance Suggestions (AI Powered) */}
               <Card>
-                {/* AI Header */}
-                <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center justify-between gap-2 mb-4">
                   <div className="flex items-center gap-2">
                     <Sparkles size={16} style={{ color: C.blushDeep }} />
                     <h3 className="ff-display text-lg font-bold" style={{ color: C.ink }}>
                       Suggested to Rebalance
                     </h3>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                      Gemini AI
-                    </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    {pct > 50 && (
-                      <button
-                        onClick={handleAutoRebalance5050}
-                        className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-xl transition-colors border border-rose-200 flex items-center gap-1 cursor-pointer"
-                        title="Auto-assign tasks to partner to reach 50/50 balance"
-                      >
-                        <Zap size={11} /> Auto 50/50
-                      </button>
-                    )}
+                  {pct > 50 && (
                     <button
-                      onClick={loadAiSuggestions}
-                      disabled={isLoadingAi}
-                      className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
-                      title="Refresh AI suggestions"
+                      onClick={handleAutoRebalance5050}
+                      className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-xl transition-colors border border-rose-200 flex items-center gap-1 cursor-pointer shrink-0"
+                      title="Auto-assign tasks to partner to reach 50/50 balance"
                     >
-                      <RefreshCw size={13} className={isLoadingAi ? "animate-spin text-purple-600" : ""} />
+                      <Zap size={11} /> Auto 50/50
                     </button>
-                  </div>
+                  )}
                 </div>
 
                 {/* AI Notification Toast */}
@@ -478,32 +459,20 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
                   )}
                 </AnimatePresence>
 
-                {/* AI Suggestions Compact List */}
-                <div className="space-y-2.5">
+                {/* AI Suggestions Clean List */}
+                <div className="space-y-3">
                   {aiSuggestions.slice(0, 4).map((s) => (
                     <div
                       key={s.id || s.name}
-                      className="p-3 rounded-2xl flex items-center justify-between gap-3 transition-all hover:bg-stone-100/70"
+                      className="p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-colors"
                       style={{ background: C.paperDeep, border: `1px solid ${C.lineLight}` }}
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                          <span className="ff-body text-xs font-semibold truncate text-stone-900">
-                            {s.name}
-                          </span>
-                          {s.impactBadge && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-purple-100/80 text-purple-800 font-medium shrink-0">
-                              {s.impactBadge}
-                            </span>
-                          )}
-                          {s.estMins && (
-                            <span className="text-[10px] text-stone-400 font-mono">
-                              ~{s.estMins}m
-                            </span>
-                          )}
-                        </div>
-                        <p className="ff-body text-[11px] text-stone-500 line-clamp-1" title={s.aiRationale || s.desc}>
-                          {s.aiRationale || s.desc}
+                      <div className="flex-1 min-w-0 pr-1">
+                        <p className="ff-body text-sm font-semibold truncate" style={{ color: C.ink }}>
+                          {s.name}
+                        </p>
+                        <p className="ff-body text-[11px] truncate" style={{ color: C.inkSoft }}>
+                          {s.desc || s.aiRationale}
                         </p>
                       </div>
 
@@ -511,7 +480,7 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
                         variant="outline"
                         size="sm"
                         onClick={() => assignToPartner(s)}
-                        className="shrink-0 text-xs py-1 px-3 shadow-2xs"
+                        className="shrink-0 text-xs"
                       >
                         Assign
                       </Button>
