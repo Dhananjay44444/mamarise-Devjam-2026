@@ -400,25 +400,29 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
                     {/* 1-Tap Quick Task Shortcuts */}
                     <div className="flex flex-wrap gap-1.5 pt-0.5">
                       {[
-                        { label: "Laundry", icon: "🧺" },
-                        { label: "Night Wake-Up", icon: "🌙" },
-                        { label: "Cooking", icon: "🍲" },
-                        { label: "Baby Care", icon: "🍼" },
-                        { label: "Groceries", icon: "🛒" },
-                      ].map((item) => (
-                        <button
-                          key={item.label}
-                          type="button"
-                          onClick={() => setTask(item.label)}
-                          className={`text-[11px] px-2.5 py-1 rounded-xl transition-all font-medium border ${
-                            task === item.label
-                              ? "bg-emerald-100 text-emerald-900 border-emerald-300 font-bold"
-                              : "bg-white/80 text-stone-600 border-stone-200 hover:bg-stone-100"
-                          }`}
-                        >
-                          {item.icon} {item.label}
-                        </button>
-                      ))}
+                        { label: "Laundry", DoodleIcon: Doodle.Laundry },
+                        { label: "Night Wake-Up", DoodleIcon: Doodle.MoonRest },
+                        { label: "Cooking", DoodleIcon: Doodle.Pot },
+                        { label: "Baby Care", DoodleIcon: Doodle.Bottle },
+                        { label: "Groceries", DoodleIcon: Doodle.Bag },
+                      ].map((item) => {
+                        const IconComp = item.DoodleIcon;
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => setTask(item.label)}
+                            className={`text-[11px] px-2.5 py-1 rounded-xl transition-all font-medium border flex items-center gap-1.5 cursor-pointer ${
+                              task === item.label
+                                ? "bg-emerald-100 text-emerald-900 border-emerald-300 font-bold"
+                                : "bg-white/80 text-stone-600 border-stone-200 hover:bg-stone-100"
+                            }`}
+                          >
+                            <IconComp className="w-3.5 h-3.5" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
 
                     {task === "Other" && (

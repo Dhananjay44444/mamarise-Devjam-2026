@@ -420,12 +420,12 @@ export default function ReadinessBridge({ capacityHrs: propCapacityHrs, skills: 
                           style={{ borderColor: C.lineLight }}
                         >
                           <div className="flex items-start gap-2 pt-2">
-                            <span className="font-bold text-emerald-800 shrink-0">🎯 Today's 15-Min Action Step:</span>
+                            <span className="font-bold text-emerald-800 shrink-0">Today's 15-Min Action Step:</span>
                             <span className="text-stone-700 leading-relaxed">{task.drill}</span>
                           </div>
                           {task.keyTakeaway && (
                             <div className="flex items-start gap-2 pt-1 border-t border-stone-200/60">
-                              <span className="font-bold text-stone-600 shrink-0">💡 Industry Takeaway:</span>
+                              <span className="font-bold text-stone-600 shrink-0">Industry Takeaway:</span>
                               <span className="text-stone-600 leading-relaxed">{task.keyTakeaway}</span>
                             </div>
                           )}

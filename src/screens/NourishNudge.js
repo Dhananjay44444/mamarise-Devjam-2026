@@ -56,10 +56,10 @@ const DEFAULT_CATEGORIES = {
 };
 
 const QUICK_PROMPTS = [
-  { label: "⚡ 2-Min Nursing Snack", query: "Quick 2-minute 1-handed snack while nursing baby at night" },
-  { label: "🍵 Calming Hot Drink", query: "Warm calming drink for postpartum exhaustion before sleep" },
-  { label: "🩸 Gentle Iron Boost", query: "Easy vegetarian iron foods that are gentle on postpartum digestion" },
-  { label: "💧 Milk Flow Hydration", query: "Hydrating drinks to support breast milk supply without sugar" },
+  { label: "2-Min Nursing Fuel", DoodleIcon: Doodle.Bottle, query: "Quick 2-minute 1-handed snack while nursing baby at night" },
+  { label: "Calming Rest Tonic", DoodleIcon: Doodle.MoonRest, query: "Warm calming drink for postpartum exhaustion before sleep" },
+  { label: "Gentle Iron Boost", DoodleIcon: Doodle.Heart, query: "Easy vegetarian iron foods that are gentle on postpartum digestion" },
+  { label: "Lactation Hydration", DoodleIcon: Doodle.Pot, query: "Hydrating drinks to support breast milk supply without sugar" },
 ];
 
 export default function NourishNudge({ recovery, go }) {
@@ -187,14 +187,14 @@ export default function NourishNudge({ recovery, go }) {
             >
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-stone-900">Your Recovery Signals:</span>
-                <span className="px-2 py-0.2 rounded-md bg-stone-100 text-stone-700 font-mono text-[11px]">
-                  💤 {recovery?.sleepHours || 6}h Sleep
+                <span className="px-2.5 py-0.5 rounded-lg bg-stone-100 text-stone-700 font-mono text-[11px] border border-stone-200">
+                  Sleep: {recovery?.sleepHours || 6}h
                 </span>
-                <span className="px-2 py-0.2 rounded-md bg-stone-100 text-stone-700 font-medium text-[11px]">
-                  ⚡ {recovery?.energy || "Okay"} Energy
+                <span className="px-2.5 py-0.5 rounded-lg bg-stone-100 text-stone-700 font-medium text-[11px] border border-stone-200">
+                  Energy: {recovery?.energy || "Okay"}
                 </span>
-                <span className="px-2 py-0.2 rounded-md bg-stone-100 text-stone-700 font-medium text-[11px]">
-                  🩺 {recovery?.pain || "None"} Pain
+                <span className="px-2.5 py-0.5 rounded-lg bg-stone-100 text-stone-700 font-medium text-[11px] border border-stone-200">
+                  Strain: {recovery?.pain || "None"}
                 </span>
               </div>
               <p className="text-stone-600 leading-relaxed">
@@ -218,20 +218,24 @@ export default function NourishNudge({ recovery, go }) {
                 Have a craving, low energy, or limited ingredients? Ask for quick 1-handed recovery ideas.
               </p>
 
-              {/* Quick Prompt Chips */}
+              {/* Quick Prompt Chips with SVG Doodles */}
               <div className="flex flex-wrap gap-1.5 mb-3">
-                {QUICK_PROMPTS.map((p) => (
-                  <button
-                    key={p.label}
-                    onClick={() => {
-                      setAiQuestion(p.query);
-                      handleAskAi(p.query);
-                    }}
-                    className="text-[11px] px-2.5 py-1 rounded-xl bg-stone-100 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-200 transition-colors font-medium border border-stone-200 text-stone-700"
-                  >
-                    {p.label}
-                  </button>
-                ))}
+                {QUICK_PROMPTS.map((p) => {
+                  const IconC = p.DoodleIcon;
+                  return (
+                    <button
+                      key={p.label}
+                      onClick={() => {
+                        setAiQuestion(p.query);
+                        handleAskAi(p.query);
+                      }}
+                      className="text-[11px] px-2.5 py-1 rounded-xl bg-stone-100 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-200 transition-colors font-medium border border-stone-200 text-stone-700 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <IconC className="w-3.5 h-3.5" />
+                      <span>{p.label}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Input & Ask Button */}
@@ -273,8 +277,8 @@ export default function NourishNudge({ recovery, go }) {
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-emerald-950 text-sm">{aiResponse.title}</span>
                         {aiResponse.prepTime && (
-                          <span className="text-[10px] px-2 py-0.2 rounded-md bg-emerald-100 text-emerald-800 font-mono">
-                            ⏱️ {aiResponse.prepTime}
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono">
+                            Prep: {aiResponse.prepTime}
                           </span>
                         )}
                       </div>
@@ -288,13 +292,13 @@ export default function NourishNudge({ recovery, go }) {
                     </p>
 
                     <div className="p-2.5 rounded-xl bg-white/90 border border-emerald-200/60 text-stone-800 space-y-1">
-                      <p className="font-bold text-emerald-900">👩‍🍳 Quick 1-Handed Prep:</p>
+                      <p className="font-bold text-emerald-900">Quick 1-Handed Prep:</p>
                       <p className="leading-relaxed">{aiResponse.quickRecipe}</p>
                     </div>
 
                     {aiResponse.healingBenefit && (
                       <p className="text-[11px] text-stone-600">
-                        💡 <b className="text-stone-800">Healing Benefit:</b> {aiResponse.healingBenefit}
+                        <b className="text-stone-800">Healing Benefit:</b> {aiResponse.healingBenefit}
                       </p>
                     )}
                   </motion.div>
