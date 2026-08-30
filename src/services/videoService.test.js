@@ -59,6 +59,66 @@ describe("Career Restart Video Courses & Track Recommendation Engine", () => {
     });
     expect(selfFinancingVideos[0].title.toLowerCase()).toContain("freelance");
   });
+
+  test("Filters all 10 specialized upskilling course tracks accurately", () => {
+    expect(COURSE_TRACKS.length).toBe(11); // "all" + 10 tracks
+    const trackIds = ["uiux", "python", "data", "pm", "selffinancing", "webdev", "marketing", "leadership", "cloud", "java"];
+    trackIds.forEach((trackId) => {
+      const videos = getCareerVideosByTrack(trackId, defaultState);
+      expect(videos.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+});
+
+describe("10 Upskilling Tracks & Weekly 15-Minute Micro-Refresher Catalog", () => {
+  const { UPSKILLING_TRACKS, getUpskillingTrack, getAllUpskillingTracks } = require("./upskillingService");
+
+  test("Provides 10 industry tracks with exactly 6 structured daily microtasks each (60 total)", () => {
+    const allTracks = getAllUpskillingTracks();
+    expect(allTracks.length).toBe(10);
+
+    let totalMicrotasks = 0;
+    allTracks.forEach((track) => {
+      expect(track.id).toBeDefined();
+      expect(track.label).toBeDefined();
+      expect(track.category).toBeDefined();
+      expect(track.targetRole).toBeDefined();
+      expect(track.tagline).toBeDefined();
+      expect(Array.isArray(track.tasks)).toBe(true);
+      expect(track.tasks.length).toBe(6); // Mon - Sat
+
+      track.tasks.forEach((task) => {
+        expect(task.id).toBeDefined();
+        expect(task.day).toBeDefined();
+        expect(task.name).toBeDefined();
+        expect(task.mins).toBeGreaterThanOrEqual(15);
+        expect(task.tag).toBeDefined();
+        expect(task.drill).toBeDefined();
+        expect(task.keyTakeaway).toBeDefined();
+        totalMicrotasks++;
+      });
+    });
+
+    expect(totalMicrotasks).toBe(60);
+  });
+
+  test("Retrieves specific upskilling tracks by identifier", () => {
+    const uiux = getUpskillingTrack("uiux");
+    expect(uiux.label).toContain("UI / UX");
+    expect(uiux.tasks[0].name).toContain("Figma");
+
+    const python = getUpskillingTrack("python");
+    expect(python.label).toContain("Python");
+    expect(python.tasks[2].name).toContain("FastAPI");
+
+    const pm = getUpskillingTrack("pm");
+    expect(pm.label).toContain("Product Management");
+    expect(pm.tasks[0].name).toContain("PRD");
+
+    const leadership = getUpskillingTrack("leadership");
+    expect(leadership.label).toContain("Leadership");
+    expect(leadership.tasks[0].name).toContain("Maternity Break");
+  });
 });
 
 describe("Watch-Time Formatting & Career Study Session Lifecycle", () => {
