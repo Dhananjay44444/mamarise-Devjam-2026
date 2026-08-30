@@ -91,6 +91,15 @@ export function VoiceCommandModal({ isOpen, onClose, onNavigate }) {
     dispatch({ type: "CLEAR_VOICE_HISTORY" });
   };
 
+  const handleDone = () => {
+    if (isListening) {
+      stopListening();
+    } else if (liveTranscript && (!lastCommandResult || lastCommandResult.rawTranscript !== liveTranscript)) {
+      executeCommand(liveTranscript);
+    }
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -218,17 +227,32 @@ export function VoiceCommandModal({ isOpen, onClose, onNavigate }) {
 
                 <p className="ff-display text-base font-bold mb-1" style={{ color: C.ink }}>
                   {isListening
-                    ? "Listening... (Auto-submits after 4s silence)"
+                    ? "Listening... (Speak or click Finish below)"
                     : isProcessing
                       ? "Interpreting with Gemini AI..."
-                      : "Click Mic to Speak"}
+                      : lastCommandResult
+                        ? "✓ Action Executed & Synced!"
+                        : "Click Mic to Speak"}
                 </p>
 
                 <p className="ff-body text-xs text-stone-500 max-w-sm">
                   {isListening
-                    ? "Speak naturally. When you finish, the assistant auto-pauses in 4 seconds and executes via Gemini AI."
-                    : "Hands-free voice recognition with automatic silence detection & AI intent parsing."}
+                    ? "Speak naturally. Click 'Finish & Apply' when done, or it will auto-pause in 4 seconds."
+                    : lastCommandResult
+                      ? `Last synced: ${lastCommandResult.summaryMessage}`
+                      : "Hands-free voice recognition with automatic silence detection & AI intent parsing."}
                 </p>
+
+                {isListening && (
+                  <Button
+                    variant="sage"
+                    size="sm"
+                    onClick={stopListening}
+                    className="mt-3 shadow-md font-bold"
+                  >
+                    <Check size={15} /> Finish & Apply Command
+                  </Button>
+                )}
               </div>
 
               {/* Live Transcript Display Bubble */}
@@ -320,6 +344,7 @@ export function VoiceCommandModal({ isOpen, onClose, onNavigate }) {
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {[
+                    "I slept for 10 hrs and am feeling good.",
                     "I completed cooking and I'm feeling very tired.",
                     "Assign grocery shopping to my partner.",
                     "I need help with dinner tomorrow.",
@@ -508,7 +533,7 @@ export function VoiceCommandModal({ isOpen, onClose, onNavigate }) {
               <Sparkles size={12} style={{ color: C.sage }} />
               Real-time Intent Detection & State Sync
             </span>
-            <Button variant="outline" size="sm" onClick={onClose}>
+            <Button variant="sage" size="sm" onClick={handleDone}>
               Done
             </Button>
           </div>
