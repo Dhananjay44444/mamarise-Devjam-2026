@@ -370,122 +370,159 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
               )}
             </Card>
 
-            {/* Bottom 2-Column: Task Logger & Smart Rebalance Recommendations */}
-            <div className="grid md:grid-cols-2 gap-6 items-start">
-              {/* Add / Log Task */}
-              <Card>
-                <div className="flex items-center gap-2 mb-4">
-                  <Plus size={16} style={{ color: C.sage }} />
-                  <h3 className="ff-display text-lg font-bold" style={{ color: C.ink }}>Log a Task</h3>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="ff-body text-xs font-semibold uppercase tracking-wider block mb-2" style={{ color: C.inkSoft }}>
-                      Select Task
-                    </label>
-                    <select
-                      value={task}
-                      onChange={(e) => setTask(e.target.value)}
-                      className="ff-body w-full px-4 py-3 rounded-2xl outline-none text-xs"
-                      style={{ background: C.cream, border: `1px solid ${C.line}`, color: C.ink }}
-                    >
-                      {["Laundry", "Baby Care", "Night Wake-Up", "Cooking", "Cleaning", "Groceries", "Other"].map((t) => (
-                        <option key={t}>{t}</option>
-                      ))}
-                    </select>
+            {/* Bottom 2-Column: Task Logger & Smart Rebalance Recommendations (Equal Height Level) */}
+            <div className="grid md:grid-cols-2 gap-6 items-stretch">
+              {/* Add / Log Task Card */}
+              <Card className="h-full flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Plus size={16} style={{ color: C.sage }} />
+                    <h3 className="ff-display text-lg font-bold" style={{ color: C.ink }}>Log a Task</h3>
                   </div>
 
-                  {task === "Other" && (
-                    <input
-                      type="text"
-                      value={customTaskName}
-                      onChange={(e) => setCustomTaskName(e.target.value)}
-                      placeholder="Enter chore name..."
-                      className="ff-body w-full px-4 py-3 rounded-2xl outline-none text-xs"
-                      style={{ background: C.cream, border: `1px solid ${C.line}`, color: C.ink }}
-                    />
-                  )}
+                  <div className="space-y-3.5">
+                    <div>
+                      <label className="ff-body text-xs font-semibold uppercase tracking-wider block mb-1.5" style={{ color: C.inkSoft }}>
+                        Select Task
+                      </label>
+                      <select
+                        value={task}
+                        onChange={(e) => setTask(e.target.value)}
+                        className="ff-body w-full px-3.5 py-2.5 rounded-2xl outline-none text-xs"
+                        style={{ background: C.cream, border: `1px solid ${C.line}`, color: C.ink }}
+                      >
+                        {["Laundry", "Baby Care", "Night Wake-Up", "Cooking", "Cleaning", "Groceries", "Other"].map((t) => (
+                          <option key={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="ff-body text-xs font-semibold uppercase tracking-wider block mb-2" style={{ color: C.inkSoft }}>
-                      Handled By
-                    </label>
-                    <div className="flex gap-2">
-                      <Chip label="Handled by Me" selected={by === "Me"} onClick={() => setBy("Me")} />
-                      <Chip label={`Assign to ${partnerName}`} selected={by === "Partner"} onClick={() => setBy("Partner")} />
+                    {/* 1-Tap Quick Task Shortcuts */}
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {[
+                        { label: "Laundry", icon: "🧺" },
+                        { label: "Night Wake-Up", icon: "🌙" },
+                        { label: "Cooking", icon: "🍲" },
+                        { label: "Baby Care", icon: "🍼" },
+                        { label: "Groceries", icon: "🛒" },
+                      ].map((item) => (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => setTask(item.label)}
+                          className={`text-[11px] px-2.5 py-1 rounded-xl transition-all font-medium border ${
+                            task === item.label
+                              ? "bg-emerald-100 text-emerald-900 border-emerald-300 font-bold"
+                              : "bg-white/80 text-stone-600 border-stone-200 hover:bg-stone-100"
+                          }`}
+                        >
+                          {item.icon} {item.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {task === "Other" && (
+                      <input
+                        type="text"
+                        value={customTaskName}
+                        onChange={(e) => setCustomTaskName(e.target.value)}
+                        placeholder="Enter chore name..."
+                        className="ff-body w-full px-3.5 py-2.5 rounded-2xl outline-none text-xs"
+                        style={{ background: C.cream, border: `1px solid ${C.line}`, color: C.ink }}
+                      />
+                    )}
+
+                    <div>
+                      <label className="ff-body text-xs font-semibold uppercase tracking-wider block mb-1.5" style={{ color: C.inkSoft }}>
+                        Handled By
+                      </label>
+                      <div className="flex gap-2">
+                        <Chip label="Handled by Me" selected={by === "Me"} onClick={() => setBy("Me")} />
+                        <Chip label={`Assign to ${partnerName}`} selected={by === "Partner"} onClick={() => setBy("Partner")} />
+                      </div>
                     </div>
                   </div>
+                </div>
 
+                <div className="pt-4 mt-auto">
                   <Button variant="sage" onClick={handleAddTask} className="w-full justify-center">
                     <Plus size={14} /> Add to Shared Load
                   </Button>
                 </div>
               </Card>
 
-              {/* Smart Rebalance Suggestions (AI Powered) */}
-              <Card>
-                <div className="flex items-center justify-between gap-2 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Sparkles size={16} style={{ color: C.blushDeep }} />
-                    <h3 className="ff-display text-lg font-bold" style={{ color: C.ink }}>
-                      Suggested to Rebalance
-                    </h3>
+              {/* Smart Rebalance Suggestions Card */}
+              <Card className="h-full flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={16} style={{ color: C.blushDeep }} />
+                      <h3 className="ff-display text-lg font-bold" style={{ color: C.ink }}>
+                        Suggested to Rebalance
+                      </h3>
+                    </div>
+
+                    {pct > 50 && (
+                      <button
+                        onClick={handleAutoRebalance5050}
+                        className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-xl transition-colors border border-rose-200 flex items-center gap-1 cursor-pointer shrink-0"
+                        title="Auto-assign tasks to partner to reach 50/50 balance"
+                      >
+                        <Zap size={11} /> Auto 50/50
+                      </button>
+                    )}
                   </div>
 
-                  {pct > 50 && (
-                    <button
-                      onClick={handleAutoRebalance5050}
-                      className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-xl transition-colors border border-rose-200 flex items-center gap-1 cursor-pointer shrink-0"
-                      title="Auto-assign tasks to partner to reach 50/50 balance"
-                    >
-                      <Zap size={11} /> Auto 50/50
-                    </button>
-                  )}
+                  {/* AI Notification Toast */}
+                  <AnimatePresence>
+                    {rebalanceNotification && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        className="p-2 mb-3 rounded-xl bg-emerald-50 text-emerald-900 text-[11px] font-bold flex items-center gap-1.5 border border-emerald-200"
+                      >
+                        <UserCheck size={14} className="text-emerald-700 shrink-0" />
+                        <span>{rebalanceNotification}</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* AI Suggestions Clean List (3 Perfectly Proportioned Items) */}
+                  <div className="space-y-2.5">
+                    {aiSuggestions.slice(0, 3).map((s) => (
+                      <div
+                        key={s.id || s.name}
+                        className="p-3 rounded-2xl flex items-center justify-between gap-3 transition-colors"
+                        style={{ background: C.paperDeep, border: `1px solid ${C.lineLight}` }}
+                      >
+                        <div className="flex-1 min-w-0 pr-1">
+                          <p className="ff-body text-xs font-bold truncate text-stone-900">
+                            {s.name}
+                          </p>
+                          <p className="ff-body text-[11px] truncate text-stone-500">
+                            {s.desc || s.aiRationale}
+                          </p>
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => assignToPartner(s)}
+                          className="shrink-0 text-xs py-1 px-3"
+                        >
+                          Assign
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                {/* AI Notification Toast */}
-                <AnimatePresence>
-                  {rebalanceNotification && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      className="p-2.5 mb-3 rounded-xl bg-emerald-50 text-emerald-900 text-[11px] font-bold flex items-center gap-1.5 border border-emerald-200"
-                    >
-                      <UserCheck size={14} className="text-emerald-700 shrink-0" />
-                      <span>{rebalanceNotification}</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* AI Suggestions Clean List */}
-                <div className="space-y-3">
-                  {aiSuggestions.slice(0, 4).map((s) => (
-                    <div
-                      key={s.id || s.name}
-                      className="p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-colors"
-                      style={{ background: C.paperDeep, border: `1px solid ${C.lineLight}` }}
-                    >
-                      <div className="flex-1 min-w-0 pr-1">
-                        <p className="ff-body text-sm font-semibold truncate" style={{ color: C.ink }}>
-                          {s.name}
-                        </p>
-                        <p className="ff-body text-[11px] truncate" style={{ color: C.inkSoft }}>
-                          {s.desc || s.aiRationale}
-                        </p>
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => assignToPartner(s)}
-                        className="shrink-0 text-xs"
-                      >
-                        Assign
-                      </Button>
-                    </div>
-                  ))}
+                {/* Harmonious Footer Note */}
+                <div className="pt-3 mt-auto">
+                  <p className="ff-body text-[11px] text-stone-500 text-center">
+                    Assigning sends a request directly to {partnerName}'s action desk.
+                  </p>
                 </div>
               </Card>
             </div>
