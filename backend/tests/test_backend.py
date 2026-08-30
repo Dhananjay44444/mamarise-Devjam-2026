@@ -119,3 +119,34 @@ def test_household_tasks_crud():
     # Delete task
     del_res = client.delete(f"/api/v1/tasks/{task_id}")
     assert del_res.status_code == 200
+
+
+def test_ai_rebalance_suggestions():
+    payload = {
+        "recovery": {
+            "sleepHours": 4.5,
+            "energy": "Low",
+            "pain": "Moderate",
+            "mood": "Exhausted"
+        },
+        "chores": [
+            {"task": "Laundry Wash", "by": "Me", "status": "confirmed"},
+            {"task": "Cooking Dinner", "by": "Me", "status": "confirmed"},
+            {"task": "Night Wake-Up", "by": "Me", "status": "confirmed"}
+        ],
+        "choreSplit": {"me": 85, "partner": 15},
+        "partnerName": "Rohan"
+    }
+    response = client.post("/api/v1/tasks/rebalance-suggestions", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "suggestions" in data
+    assert len(data["suggestions"]) >= 4
+
+    first = data["suggestions"][0]
+    assert "name" in first
+    assert "desc" in first
+    assert "aiRationale" in first
+    assert "urgency" in first
+    assert "impactBadge" in first
+

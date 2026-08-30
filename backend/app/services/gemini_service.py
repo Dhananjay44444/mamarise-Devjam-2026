@@ -194,6 +194,56 @@ class GeminiService:
             "empathetic_reply": "I'm listening and right here with you. Take a deep breath—you are doing enough."
         }
 
+    @classmethod
+    async def generate_rebalance_recommendations(
+        cls,
+        recovery: Dict[str, Any],
+        chores: List[Dict[str, Any]],
+        chore_split: Dict[str, int],
+        partner_name: str = "Partner"
+    ) -> List[Dict[str, Any]]:
+        """
+        Generates intelligent household rebalancing chore recommendations tailored to Mom's 
+        current physical recovery metrics, pain points, and domestic equity split using Gemini AI.
+        """
+        system_instruction = (
+            "You are an empathetic Family Workload & Postpartum Ergonomics AI Assistant for MamaRise.\n"
+            "Analyze Mom's physical recovery triage metrics (sleep hours, energy, pain points, mood) "
+            "and her current domestic chore load compared to her partner.\n"
+            "Generate 4 to 5 highly practical, actionable household tasks that should be shifted to her partner "
+            "to relieve physical strain, protect restorative rest, and balance the domestic workload.\n"
+            "Output strictly a JSON list containing objects with keys:\n"
+            "- 'id': unique string id\n"
+            "- 'name': Specific task name (e.g., 'Night Bottle & Soothing Duty', 'Laundry Washing & Folding')\n"
+            "- 'desc': 1-sentence concise description\n"
+            "- 'aiRationale': 1-2 sentence empathetic explanation of WHY shifting this task helps Mom's recovery\n"
+            "- 'category': 'Night Care' | 'Cooking' | 'Errands' | 'Cleaning' | 'Baby Care'\n"
+            "- 'estMins': estimated minutes saved (e.g. 30, 45, 60)\n"
+            "- 'urgency': 'Urgent' | 'High Priority' | 'Recommended'\n"
+            "- 'impactBadge': 'Spinal Relief' | 'Sleep Restoration' | 'Fatigue Reduction' | 'Errand Offload'\n"
+            "Output strictly valid JSON without markdown formatting."
+        )
+
+        prompt = (
+            f"Mom's Recovery Data: {json.dumps(recovery)}\n"
+            f"Current Domestic Load Split: Mom {chore_split.get('me', 75)}% vs Partner {chore_split.get('partner', 25)}%\n"
+            f"Partner Name: {partner_name}\n"
+            f"Active Household Chores: {json.dumps([c.get('task', '') for c in chores[:10]])}"
+        )
+
+        raw_response = await cls._call_gemini_api(prompt, system_instruction)
+
+        if raw_response:
+            try:
+                cleaned = raw_response.replace("```json", "").replace("```", "").strip()
+                data = json.loads(cleaned)
+                if isinstance(data, list) and len(data) >= 3:
+                    return data
+            except Exception as e:
+                logger.warning(f"Failed to parse Gemini rebalance output: {e}")
+
+        return cls._fallback_rebalance_suggestions(recovery, chore_split, partner_name)
+
     @staticmethod
     def _fallback_nutrition_suggestions(energy: str, sleep: float) -> List[Dict[str, Any]]:
         return [
@@ -232,5 +282,70 @@ class GeminiService:
                 "action_tip": "Steep pure chamomile flowers with warm oat milk and a dash of nutmeg.",
                 "timing": "30 Mins Before Sleep",
                 "quick_prep_mins": 3
+            }
+        ]
+
+    @staticmethod
+    def _fallback_rebalance_suggestions(
+        recovery: Dict[str, Any], 
+        chore_split: Dict[str, int], 
+        partner_name: str
+    ) -> List[Dict[str, Any]]:
+        sleep_hours = recovery.get("sleepHours", 6)
+        energy = recovery.get("energy", "Okay")
+        pain = recovery.get("pain", "None")
+
+        is_high_strain = sleep_hours < 5 or energy == "Low" or pain in ["Moderate", "Severe"]
+
+        return [
+            {
+                "id": "rebal-night-01",
+                "name": "Night Wake-Up & Feeding Assist Shift",
+                "desc": f"Transfers 3 AM diaper and burping duty to {partner_name}",
+                "aiRationale": f"Because you logged {sleep_hours}h sleep and {energy} energy, taking over the night waking protects 90 continuous minutes of deep REM recovery sleep.",
+                "category": "Night Care",
+                "estMins": 45,
+                "urgency": "Urgent" if is_high_strain else "High Priority",
+                "impactBadge": "Sleep Restoration"
+            },
+            {
+                "id": "rebal-cook-02",
+                "name": "Evening Warm Dinner & Khichdi Prep",
+                "desc": "Transfers standing kitchen cooking duties to partner",
+                "aiRationale": f"Eliminates 40 minutes of continuous standing in the kitchen, relieving pelvic and lower lumbar strain during postpartum tissue healing.",
+                "category": "Cooking",
+                "estMins": 40,
+                "urgency": "High Priority" if pain != "None" else "Recommended",
+                "impactBadge": "Spinal Relief"
+            },
+            {
+                "id": "rebal-errand-03",
+                "name": "Grocery & Pharmacy Errand Run",
+                "desc": "Offloads external errands and heavy grocery bags",
+                "aiRationale": f"Prevents heavy lifting and driving stress, allowing you to stay resting in comfortable clothing at home.",
+                "category": "Errands",
+                "estMins": 35,
+                "urgency": "Recommended",
+                "impactBadge": "Errand Offload"
+            },
+            {
+                "id": "rebal-laundry-04",
+                "name": "Laundry Wash, Fold & Put Away",
+                "desc": "Transfers heavy basket carrying and repetitive bending",
+                "aiRationale": f"Repetitive bending over laundry baskets stresses the lumbar spine. Handing this to {partner_name} saves 30 minutes of physical exertion.",
+                "category": "Cleaning",
+                "estMins": 30,
+                "urgency": "High Priority" if pain in ["Mild", "Moderate", "Severe"] else "Recommended",
+                "impactBadge": "Spinal Relief"
+            },
+            {
+                "id": "rebal-bottles-05",
+                "name": "Sanitize Pump Parts & Bottles",
+                "desc": "Handles evening sterilizer run and bottle prep",
+                "aiRationale": f"Ensures all clean feeding gear is ready beside your bed before the night shift without you having to clean at midnight.",
+                "category": "Baby Care",
+                "estMins": 20,
+                "urgency": "Recommended",
+                "impactBadge": "Fatigue Reduction"
             }
         ]

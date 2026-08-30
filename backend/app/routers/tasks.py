@@ -52,3 +52,24 @@ def delete_household_task(task_id: int, db: Session = Depends(get_db)):
     db.delete(task)
     db.commit()
     return {"status": "deleted", "id": task_id}
+
+@router.post("/rebalance-suggestions")
+async def get_ai_rebalance_suggestions(payload: dict):
+    """
+    Generates intelligent household rebalancing suggestions powered by Gemini AI.
+    Analyzes Mom's recovery metrics, pain points, active chores, and domestic load split.
+    """
+    from ..services.gemini_service import GeminiService
+    
+    recovery = payload.get("recovery", {})
+    chores = payload.get("chores", [])
+    chore_split = payload.get("choreSplit", {"me": 75, "partner": 25})
+    partner_name = payload.get("partnerName", "Partner")
+
+    suggestions = await GeminiService.generate_rebalance_recommendations(
+        recovery=recovery,
+        chores=chores,
+        chore_split=chore_split,
+        partner_name=partner_name
+    )
+    return {"suggestions": suggestions}

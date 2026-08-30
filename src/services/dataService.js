@@ -115,9 +115,100 @@ export async function evaluateTriageRuleEngine(recovery = {}) {
       return await res.json();
     }
   } catch (err) {
-    console.warn("[API] Backend triage request failed", err);
+    console.warn("[API] Backend triage request failed, using local safety logic", err);
   }
   return null;
+}
+
+/**
+ * Fetches AI-powered household rebalance suggestions from Gemini via the FastAPI backend
+ */
+export async function fetchAiRebalanceSuggestions(
+  recovery = {},
+  chores = [],
+  choreSplit = { me: 75, partner: 25 },
+  partnerName = "Partner"
+) {
+  try {
+    const res = await fetch(`${API_BASE}/tasks/rebalance-suggestions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recovery,
+        chores,
+        choreSplit,
+        partnerName,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+        return data.suggestions;
+      }
+    }
+  } catch (err) {
+    console.warn("[API] Backend rebalance suggestion request failed, using local AI fallback", err);
+  }
+
+  // Local intelligent fallback based on Mom's actual recovery numbers
+  const sleepHours = recovery.sleepHours ?? 6;
+  const energy = recovery.energy || "Okay";
+  const pain = recovery.pain || "None";
+  const isHighStrain = sleepHours < 5 || energy === "Low" || pain === "Severe" || pain === "Moderate";
+
+  return [
+    {
+      id: "rebal-night-01",
+      name: "Night Wake-Up & Feeding Assist Shift",
+      desc: `Transfers 3 AM diaper and burping duty to ${partnerName}`,
+      aiRationale: `Because you logged ${sleepHours}h sleep and ${energy} energy, having ${partnerName} cover the 3 AM wake-up protects 90 continuous minutes of restorative REM sleep.`,
+      category: "Night Care",
+      estMins: 45,
+      urgency: isHighStrain ? "Urgent" : "High Priority",
+      impactBadge: "Sleep Restoration",
+    },
+    {
+      id: "rebal-cook-02",
+      name: "Evening Warm Dinner & Khichdi Prep",
+      desc: `Transfers standing kitchen cooking duties to ${partnerName}`,
+      aiRationale: "Eliminates 40 minutes of continuous standing in the kitchen, relieving pelvic floor pressure and lower lumbar strain.",
+      category: "Cooking",
+      estMins: 40,
+      urgency: pain !== "None" ? "High Priority" : "Recommended",
+      impactBadge: "Spinal Relief",
+    },
+    {
+      id: "rebal-errand-03",
+      name: "Grocery & Pharmacy Errand Run",
+      desc: "Offloads external errands and heavy grocery bags",
+      aiRationale: "Prevents heavy lifting and driving fatigue, allowing you to stay resting in comfortable clothing at home.",
+      category: "Errands",
+      estMins: 35,
+      urgency: "Recommended",
+      impactBadge: "Errand Offload",
+    },
+    {
+      id: "rebal-laundry-04",
+      name: "Laundry Wash, Fold & Put Away",
+      desc: "Transfers heavy basket carrying and repetitive bending",
+      aiRationale: `Repetitive bending over laundry baskets stresses the lumbar spine. Handing this to ${partnerName} saves 30 minutes of physical exertion.`,
+      category: "Cleaning",
+      estMins: 30,
+      urgency: pain !== "None" ? "High Priority" : "Recommended",
+      impactBadge: "Spinal Relief",
+    },
+    {
+      id: "rebal-bottles-05",
+      name: "Sanitize Pump Parts & Bottles",
+      desc: "Handles evening sterilizer run and bottle prep",
+      aiRationale: "Ensures all clean feeding gear is ready beside your bed before the night shift without you having to wash at midnight.",
+      category: "Baby Care",
+      estMins: 20,
+      urgency: "Recommended",
+      impactBadge: "Fatigue Reduction",
+    },
+  ];
 }
 
 export async function fetchVideoRecommendations() {

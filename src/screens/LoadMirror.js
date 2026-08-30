@@ -1,15 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Check, Sparkles, AlertCircle, Heart, Send, CheckCheck, Zap } from "lucide-react";
+import {
+  Plus,
+  Check,
+  Sparkles,
+  AlertCircle,
+  Heart,
+  Send,
+  CheckCheck,
+  Zap,
+  RefreshCw,
+  Clock,
+  UserCheck,
+  Sliders,
+} from "lucide-react";
 import { C } from "../theme";
 import { Screen, Card, Button, TopBar, Chip, Badge } from "../ui/chrome";
 import { Doodle } from "../ui/Doodles";
-import { useAppState } from "../state/store";
+import { useAppState, selectChoreSplit } from "../state/store";
+import { fetchAiRebalanceSuggestions } from "../services/dataService";
 
 export default function LoadMirror({ chores = [], setChores, capacityLow, go }) {
   const { state, dispatch } = useAppState();
-  const { helpRequests = [], partnerProfile } = state;
+  const { helpRequests = [], partnerProfile, recovery } = state;
   const partnerName = partnerProfile?.name || "Partner";
 
   const [task, setTask] = useState("Laundry");
@@ -19,36 +33,82 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
   const [helpInput, setHelpInput] = useState("");
   const [helpUrgency, setHelpUrgency] = useState("High");
 
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
+  const [rebalanceNotification, setRebalanceNotification] = useState(null);
+
   const pending = chores.filter((c) => c.status === "pending");
   const partnerTaken = chores.filter((c) => c.by === "Partner");
 
-  const activeOrDone = chores.filter((c) => c.status === "confirmed" || c.status === "completed");
-  const total = activeOrDone.length || 1;
-  const mine = activeOrDone.filter((c) => c.by === "Me").length;
-  const pct = Math.round((mine / total) * 100);
+  const choreSplit = selectChoreSplit(state);
+  const pct = choreSplit.me;
 
   const pieData = [
     { name: "You", value: pct },
     { name: partnerName, value: 100 - pct },
   ];
 
-  const suggestions = [
-    { name: "Night Wake-Up & Assist", desc: "Saves ~45 mins of broken sleep" },
-    { name: "Cooking Dinner & Khichdi", desc: "Saves standing fatigue in kitchen" },
-    { name: "Grocery / Pharmacy Run", desc: "External errands off your plate" },
-    { name: "Laundry Wash & Fold", desc: "Heavy physical lifting & bending" },
-  ];
+  // Load AI Rebalancing Suggestions from Gemini
+  const loadAiSuggestions = async () => {
+    setIsLoadingAi(true);
+    try {
+      const suggestions = await fetchAiRebalanceSuggestions(
+        recovery || {},
+        chores,
+        choreSplit,
+        partnerName
+      );
+      if (suggestions && suggestions.length > 0) {
+        setAiSuggestions(suggestions);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch AI suggestions:", err);
+    } finally {
+      setIsLoadingAi(false);
+    }
+  };
 
-  const assignToPartner = (t) => {
+  useEffect(() => {
+    loadAiSuggestions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recovery?.sleepHours, recovery?.energy, recovery?.pain, chores.length]);
+
+  const assignToPartner = (t, meta = {}) => {
     dispatch({
       type: "ASSIGN_TASK",
       payload: {
-        task: t,
+        task: typeof t === "string" ? t : t.name,
         by: "Partner",
-        category: "Household",
-        estMins: 30,
+        category: meta.category || (typeof t === "object" ? t.category : "Household"),
+        estMins: meta.estMins || (typeof t === "object" ? t.estMins : 30),
+        notes: meta.aiRationale || (typeof t === "object" ? t.aiRationale : `AI Rebalance recommendation for ${partnerName}`),
       },
     });
+
+    const taskName = typeof t === "string" ? t : t.name;
+    setRebalanceNotification(`✓ Shifted "${taskName}" to ${partnerName}. Domestic equity updating!`);
+    setTimeout(() => setRebalanceNotification(null), 4000);
+  };
+
+  // 1-Click Auto-Rebalance to 50/50
+  const handleAutoRebalance5050 = () => {
+    // If Mom's load is over 50%, take top 2 high-strain AI suggested tasks and assign to Partner
+    const tasksToAssign = aiSuggestions.slice(0, 2);
+    tasksToAssign.forEach((item) => {
+      dispatch({
+        type: "ASSIGN_TASK",
+        payload: {
+          task: item.name,
+          by: "Partner",
+          category: item.category || "Household",
+          estMins: item.estMins || 30,
+          notes: `1-Click 50/50 Auto-Rebalance: ${item.aiRationale}`,
+        },
+      });
+    });
+
+    setRebalanceNotification(`✨ AI Auto-Rebalanced! Assigned 2 high-strain tasks to ${partnerName} to reach domestic equity.`);
+    setTimeout(() => setRebalanceNotification(null), 5000);
   };
 
   const handleAddTask = () => {
@@ -370,31 +430,171 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
                 </div>
               </Card>
 
-              {/* Smart Rebalance Suggestions */}
-              <Card>
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles size={16} style={{ color: C.blushDeep }} />
-                  <h3 className="ff-display text-lg font-bold" style={{ color: C.ink }}>
-                    Suggested to Rebalance
-                  </h3>
+              {/* Gemini AI Smart Rebalance Intelligence */}
+              <Card className="relative overflow-hidden">
+                {/* AI Header & Action Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shadow-xs">
+                      <Sparkles size={18} />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="ff-display text-lg font-bold" style={{ color: C.ink }}>
+                          AI-Suggested to Rebalance
+                        </h3>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                          Gemini 1.5 AI
+                        </span>
+                      </div>
+                      <p className="ff-body text-xs text-stone-500">
+                        Workload redistribution tuned to your physical recovery triage.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={loadAiSuggestions}
+                    disabled={isLoadingAi}
+                    className="self-start sm:self-auto px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                    title="Re-analyze recovery signals with Gemini"
+                  >
+                    <RefreshCw size={13} className={isLoadingAi ? "animate-spin text-purple-600" : ""} />
+                    <span>{isLoadingAi ? "Analyzing..." : "Re-Analyze"}</span>
+                  </button>
                 </div>
 
-                <div className="space-y-3">
-                  {suggestions.map((s) => (
-                    <div
-                      key={s.name}
-                      className="p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-colors"
-                      style={{ background: C.paperDeep, border: `1px solid ${C.lineLight}` }}
-                    >
-                      <div>
-                        <p className="ff-body text-sm font-semibold" style={{ color: C.ink }}>{s.name}</p>
-                        <p className="ff-body text-[11px]" style={{ color: C.inkSoft }}>{s.desc}</p>
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => assignToPartner(s.name)}>
-                        Assign
-                      </Button>
+                {/* AI Recovery Strain Context & 1-Click 50/50 Action Banner */}
+                <div
+                  className="p-4 rounded-2xl mb-4 text-xs space-y-2.5 border"
+                  style={{
+                    background: "rgba(255, 245, 245, 0.7)",
+                    borderColor: "rgba(244, 187, 187, 0.5)",
+                  }}
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-rose-900">Current Recovery Signals:</span>
+                      <span className="px-2 py-0.2 rounded-md bg-white text-stone-700 font-mono text-[11px] border border-rose-200">
+                        💤 {recovery?.sleepHours || 6}h Sleep
+                      </span>
+                      <span className="px-2 py-0.2 rounded-md bg-white text-stone-700 font-medium text-[11px] border border-rose-200">
+                        ⚡ {recovery?.energy || "Okay"} Energy
+                      </span>
+                      <span className="px-2 py-0.2 rounded-md bg-white text-stone-700 font-medium text-[11px] border border-rose-200">
+                        🩺 {recovery?.pain || "None"} Pain
+                      </span>
                     </div>
-                  ))}
+
+                    {pct > 50 && (
+                      <button
+                        onClick={handleAutoRebalance5050}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition-all flex items-center gap-1 shadow-xs"
+                      >
+                        <Sliders size={13} /> 1-Click Auto-Rebalance to 50/50
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-stone-600 leading-relaxed">
+                    AI recommendation based on your recovery: Offloading repetitive bending, standing kitchen tasks, and broken night wakings protects your pelvic & spinal healing.
+                  </p>
+                </div>
+
+                {/* AI Rebalance Notification Alert */}
+                <AnimatePresence>
+                  {rebalanceNotification && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="p-3 mb-4 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-bold flex items-center gap-2 border border-emerald-300"
+                    >
+                      <UserCheck size={16} className="text-emerald-700 shrink-0" />
+                      <span>{rebalanceNotification}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* AI Suggestions List */}
+                <div className="space-y-3">
+                  {aiSuggestions.map((s) => {
+                    const isUrgent = s.urgency === "Urgent";
+                    const isHigh = s.urgency === "High Priority";
+
+                    return (
+                      <div
+                        key={s.id || s.name}
+                        className="p-4 rounded-2xl flex flex-col justify-between gap-2.5 transition-all shadow-xs"
+                        style={{
+                          background: isUrgent ? "rgba(255, 240, 240, 0.95)" : C.paperDeep,
+                          border: `1.5px solid ${isUrgent ? "rgba(248, 113, 113, 0.4)" : C.lineLight}`,
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span
+                                className={`text-[10px] px-2 py-0.2 rounded-full font-bold uppercase tracking-wider ${
+                                  isUrgent
+                                    ? "bg-rose-600 text-white"
+                                    : isHigh
+                                    ? "bg-amber-600 text-white"
+                                    : "bg-emerald-700 text-white"
+                                }`}
+                              >
+                                {s.urgency || "Recommended"}
+                              </span>
+                              <span className="text-[10px] px-2 py-0.2 rounded-full bg-stone-200 text-stone-700 font-medium">
+                                {s.category}
+                              </span>
+                              {s.impactBadge && (
+                                <span className="text-[10px] px-2 py-0.2 rounded-full bg-purple-100 text-purple-800 font-semibold border border-purple-200">
+                                  ✦ {s.impactBadge}
+                                </span>
+                              )}
+                              {s.estMins && (
+                                <span className="text-[10px] text-stone-500 font-mono flex items-center gap-1">
+                                  <Clock size={11} /> Saves ~{s.estMins}m
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="ff-display text-base font-bold text-stone-900 leading-snug">
+                              {s.name}
+                            </p>
+                            <p className="ff-body text-xs text-stone-600 leading-snug">
+                              {s.desc}
+                            </p>
+                          </div>
+
+                          <Button
+                            variant={isUrgent ? "blush" : "outline"}
+                            size="sm"
+                            onClick={() => assignToPartner(s)}
+                            className="shrink-0 text-xs font-bold shadow-xs"
+                          >
+                            Assign to {partnerName}
+                          </Button>
+                        </div>
+
+                        {/* Gemini Clinical Rationale Quote */}
+                        {s.aiRationale && (
+                          <div
+                            className="p-2.5 rounded-xl text-[11px] leading-relaxed flex items-start gap-2"
+                            style={{
+                              background: isUrgent ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 252, 247, 0.9)",
+                              border: `1px solid ${C.lineLight}`,
+                            }}
+                          >
+                            <Sparkles size={13} className="text-purple-600 shrink-0 mt-0.5" />
+                            <p className="text-stone-700 font-medium">
+                              <b className="text-purple-900 font-semibold">Gemini AI Rationale:</b> {s.aiRationale}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </Card>
             </div>
