@@ -26,7 +26,7 @@ export function Logo({ size = 32, dark = false, withTagline = false }) {
       </div>
       <div>
         <span className="ff-display text-2xl tracking-tight leading-none block font-normal" style={{ color: dark ? C.cream : C.ink }}>
-          mama<em style={{ color: dark ? C.emeraldLight : C.sage, fontStyle: "italic" }}>rise</em>
+          Mama<em style={{ color: dark ? C.emeraldLight : C.sage, fontStyle: "italic" }}>Rise</em>
         </span>
         {withTagline && (
           <span className="ff-body text-[10px] tracking-widest uppercase block mt-0.5" style={{ color: dark ? C.paperDeep : C.inkSoft }}>

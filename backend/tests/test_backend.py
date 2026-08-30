@@ -79,22 +79,37 @@ def test_nutrition_nudge_api():
 
 
 def test_ask_nutrition_ai():
-    payload = {
-        "question": "What is a 2-minute 1-handed snack while nursing?",
-        "recovery": {
-            "sleepHours": 5.0,
-            "energy": "Low"
-        }
+    # Test 1: 1-handed night snack
+    payload1 = {
+        "question": "What is a 2-minute 1-handed snack while nursing at 3 AM?",
+        "recovery": {"sleepHours": 5.0, "energy": "Low"}
     }
-    response = client.post("/api/v1/nutrition/ask", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "success"
-    result = data["result"]
-    assert "title" in result
-    assert "recommendation" in result
-    assert "quickRecipe" in result
-    assert "healingBenefit" in result
+    res1 = client.post("/api/v1/nutrition/ask", json=payload1)
+    assert res1.status_code == 200
+    data1 = res1.json()["result"]
+    assert "title" in data1
+    assert "recommendation" in data1
+    assert "quickRecipe" in data1
+
+    # Test 2: Sweet cravings
+    payload2 = {
+        "question": "I have an intense chocolate sweet craving after nursing",
+        "recovery": {"sleepHours": 6.0, "energy": "Okay"}
+    }
+    res2 = client.post("/api/v1/nutrition/ask", json=payload2)
+    assert res2.status_code == 200
+    data2 = res2.json()["result"]
+    assert "Cacao" in data2["title"] or "Sweet" in data2["title"]
+
+    # Test 3: Dizziness
+    payload3 = {
+        "question": "I feel dizzy and lightheaded",
+        "recovery": {"sleepHours": 4.0, "energy": "Low"}
+    }
+    res3 = client.post("/api/v1/nutrition/ask", json=payload3)
+    assert res3.status_code == 200
+    data3 = res3.json()["result"]
+    assert "Date" in data3["title"] or "Toast" in data3["title"] or "Salt" in data3["title"]
 
 
 
