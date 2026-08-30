@@ -12,6 +12,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Heart,
+  Check,
 } from "lucide-react";
 import { C, shadows } from "../theme";
 import { Button, Badge } from "./chrome";

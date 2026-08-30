@@ -38,20 +38,6 @@ export function useVoiceCommand(onNavigate) {
     }
   }, []);
 
-  // Stop listening session and process whatever text was captured
-  const stopListening = useCallback(() => {
-    clearSilenceTimer();
-    const textToProcess = currentTranscriptRef.current ? currentTranscriptRef.current.trim() : "";
-    if (serviceRef.current) {
-      serviceRef.current.stop();
-    }
-    setIsListening(false);
-    if (textToProcess) {
-      setFinalTranscript(textToProcess);
-      processTranscript(textToProcess);
-    }
-  }, [clearSilenceTimer, processTranscript]);
-
   // Process a final transcript into intent with Gemini AI support
   const processTranscript = useCallback(
     async (transcriptText) => {
@@ -101,6 +87,20 @@ export function useVoiceCommand(onNavigate) {
     },
     [state, dispatch, onNavigate, clearSilenceTimer]
   );
+
+  // Stop listening session and process whatever text was captured
+  const stopListening = useCallback(() => {
+    clearSilenceTimer();
+    const textToProcess = currentTranscriptRef.current ? currentTranscriptRef.current.trim() : "";
+    if (serviceRef.current) {
+      serviceRef.current.stop();
+    }
+    setIsListening(false);
+    if (textToProcess) {
+      setFinalTranscript(textToProcess);
+      processTranscript(textToProcess);
+    }
+  }, [clearSilenceTimer, processTranscript]);
 
   // Reset 4-second inactivity/silence timer
   const resetSilenceTimer = useCallback(() => {
