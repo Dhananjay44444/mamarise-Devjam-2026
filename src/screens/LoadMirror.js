@@ -11,9 +11,7 @@ import {
   CheckCheck,
   Zap,
   RefreshCw,
-  Clock,
   UserCheck,
-  Sliders,
 } from "lucide-react";
 import { C } from "../theme";
 import { Screen, Card, Button, TopBar, Chip, Badge } from "../ui/chrome";
@@ -378,7 +376,7 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
             </Card>
 
             {/* Bottom 2-Column: Task Logger & Smart Rebalance Recommendations */}
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-6 items-start">
               {/* Add / Log Task */}
               <Card>
                 <div className="flex items-center gap-2 mb-4">
@@ -394,7 +392,7 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
                     <select
                       value={task}
                       onChange={(e) => setTask(e.target.value)}
-                      className="ff-body w-full px-4 py-3 rounded-2xl outline-none"
+                      className="ff-body w-full px-4 py-3 rounded-2xl outline-none text-xs"
                       style={{ background: C.cream, border: `1px solid ${C.line}`, color: C.ink }}
                     >
                       {["Laundry", "Baby Care", "Night Wake-Up", "Cooking", "Cleaning", "Groceries", "Other"].map((t) => (
@@ -431,170 +429,94 @@ export default function LoadMirror({ chores = [], setChores, capacityLow, go }) 
               </Card>
 
               {/* Gemini AI Smart Rebalance Intelligence */}
-              <Card className="relative overflow-hidden">
-                {/* AI Header & Action Bar */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shadow-xs">
-                      <Sparkles size={18} />
+              <Card>
+                {/* AI Header */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={16} style={{ color: C.blushDeep }} />
+                    <h3 className="ff-display text-lg font-bold" style={{ color: C.ink }}>
+                      Suggested to Rebalance
+                    </h3>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                      Gemini AI
                     </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="ff-display text-lg font-bold" style={{ color: C.ink }}>
-                          AI-Suggested to Rebalance
-                        </h3>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                          Gemini 1.5 AI
-                        </span>
-                      </div>
-                      <p className="ff-body text-xs text-stone-500">
-                        Workload redistribution tuned to your physical recovery triage.
-                      </p>
-                    </div>
                   </div>
 
-                  <button
-                    onClick={loadAiSuggestions}
-                    disabled={isLoadingAi}
-                    className="self-start sm:self-auto px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
-                    title="Re-analyze recovery signals with Gemini"
-                  >
-                    <RefreshCw size={13} className={isLoadingAi ? "animate-spin text-purple-600" : ""} />
-                    <span>{isLoadingAi ? "Analyzing..." : "Re-Analyze"}</span>
-                  </button>
-                </div>
-
-                {/* AI Recovery Strain Context & 1-Click 50/50 Action Banner */}
-                <div
-                  className="p-4 rounded-2xl mb-4 text-xs space-y-2.5 border"
-                  style={{
-                    background: "rgba(255, 245, 245, 0.7)",
-                    borderColor: "rgba(244, 187, 187, 0.5)",
-                  }}
-                >
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-rose-900">Current Recovery Signals:</span>
-                      <span className="px-2 py-0.2 rounded-md bg-white text-stone-700 font-mono text-[11px] border border-rose-200">
-                        💤 {recovery?.sleepHours || 6}h Sleep
-                      </span>
-                      <span className="px-2 py-0.2 rounded-md bg-white text-stone-700 font-medium text-[11px] border border-rose-200">
-                        ⚡ {recovery?.energy || "Okay"} Energy
-                      </span>
-                      <span className="px-2 py-0.2 rounded-md bg-white text-stone-700 font-medium text-[11px] border border-rose-200">
-                        🩺 {recovery?.pain || "None"} Pain
-                      </span>
-                    </div>
-
+                  <div className="flex items-center gap-1.5">
                     {pct > 50 && (
                       <button
                         onClick={handleAutoRebalance5050}
-                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition-all flex items-center gap-1 shadow-xs"
+                        className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-xl transition-colors border border-rose-200 flex items-center gap-1 cursor-pointer"
+                        title="Auto-assign tasks to partner to reach 50/50 balance"
                       >
-                        <Sliders size={13} /> 1-Click Auto-Rebalance to 50/50
+                        <Zap size={11} /> Auto 50/50
                       </button>
                     )}
+                    <button
+                      onClick={loadAiSuggestions}
+                      disabled={isLoadingAi}
+                      className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+                      title="Refresh AI suggestions"
+                    >
+                      <RefreshCw size={13} className={isLoadingAi ? "animate-spin text-purple-600" : ""} />
+                    </button>
                   </div>
-                  <p className="text-stone-600 leading-relaxed">
-                    AI recommendation based on your recovery: Offloading repetitive bending, standing kitchen tasks, and broken night wakings protects your pelvic & spinal healing.
-                  </p>
                 </div>
 
-                {/* AI Rebalance Notification Alert */}
+                {/* AI Notification Toast */}
                 <AnimatePresence>
                   {rebalanceNotification && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
+                      initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="p-3 mb-4 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-bold flex items-center gap-2 border border-emerald-300"
+                      exit={{ opacity: 0, y: -6 }}
+                      className="p-2.5 mb-3 rounded-xl bg-emerald-50 text-emerald-900 text-[11px] font-bold flex items-center gap-1.5 border border-emerald-200"
                     >
-                      <UserCheck size={16} className="text-emerald-700 shrink-0" />
+                      <UserCheck size={14} className="text-emerald-700 shrink-0" />
                       <span>{rebalanceNotification}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
-                {/* AI Suggestions List */}
-                <div className="space-y-3">
-                  {aiSuggestions.map((s) => {
-                    const isUrgent = s.urgency === "Urgent";
-                    const isHigh = s.urgency === "High Priority";
-
-                    return (
-                      <div
-                        key={s.id || s.name}
-                        className="p-4 rounded-2xl flex flex-col justify-between gap-2.5 transition-all shadow-xs"
-                        style={{
-                          background: isUrgent ? "rgba(255, 240, 240, 0.95)" : C.paperDeep,
-                          border: `1.5px solid ${isUrgent ? "rgba(248, 113, 113, 0.4)" : C.lineLight}`,
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="space-y-1 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span
-                                className={`text-[10px] px-2 py-0.2 rounded-full font-bold uppercase tracking-wider ${
-                                  isUrgent
-                                    ? "bg-rose-600 text-white"
-                                    : isHigh
-                                    ? "bg-amber-600 text-white"
-                                    : "bg-emerald-700 text-white"
-                                }`}
-                              >
-                                {s.urgency || "Recommended"}
-                              </span>
-                              <span className="text-[10px] px-2 py-0.2 rounded-full bg-stone-200 text-stone-700 font-medium">
-                                {s.category}
-                              </span>
-                              {s.impactBadge && (
-                                <span className="text-[10px] px-2 py-0.2 rounded-full bg-purple-100 text-purple-800 font-semibold border border-purple-200">
-                                  ✦ {s.impactBadge}
-                                </span>
-                              )}
-                              {s.estMins && (
-                                <span className="text-[10px] text-stone-500 font-mono flex items-center gap-1">
-                                  <Clock size={11} /> Saves ~{s.estMins}m
-                                </span>
-                              )}
-                            </div>
-
-                            <p className="ff-display text-base font-bold text-stone-900 leading-snug">
-                              {s.name}
-                            </p>
-                            <p className="ff-body text-xs text-stone-600 leading-snug">
-                              {s.desc}
-                            </p>
-                          </div>
-
-                          <Button
-                            variant={isUrgent ? "blush" : "outline"}
-                            size="sm"
-                            onClick={() => assignToPartner(s)}
-                            className="shrink-0 text-xs font-bold shadow-xs"
-                          >
-                            Assign to {partnerName}
-                          </Button>
+                {/* AI Suggestions Compact List */}
+                <div className="space-y-2.5">
+                  {aiSuggestions.slice(0, 4).map((s) => (
+                    <div
+                      key={s.id || s.name}
+                      className="p-3 rounded-2xl flex items-center justify-between gap-3 transition-all hover:bg-stone-100/70"
+                      style={{ background: C.paperDeep, border: `1px solid ${C.lineLight}` }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                          <span className="ff-body text-xs font-semibold truncate text-stone-900">
+                            {s.name}
+                          </span>
+                          {s.impactBadge && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-purple-100/80 text-purple-800 font-medium shrink-0">
+                              {s.impactBadge}
+                            </span>
+                          )}
+                          {s.estMins && (
+                            <span className="text-[10px] text-stone-400 font-mono">
+                              ~{s.estMins}m
+                            </span>
+                          )}
                         </div>
-
-                        {/* Gemini Clinical Rationale Quote */}
-                        {s.aiRationale && (
-                          <div
-                            className="p-2.5 rounded-xl text-[11px] leading-relaxed flex items-start gap-2"
-                            style={{
-                              background: isUrgent ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 252, 247, 0.9)",
-                              border: `1px solid ${C.lineLight}`,
-                            }}
-                          >
-                            <Sparkles size={13} className="text-purple-600 shrink-0 mt-0.5" />
-                            <p className="text-stone-700 font-medium">
-                              <b className="text-purple-900 font-semibold">Gemini AI Rationale:</b> {s.aiRationale}
-                            </p>
-                          </div>
-                        )}
+                        <p className="ff-body text-[11px] text-stone-500 line-clamp-1" title={s.aiRationale || s.desc}>
+                          {s.aiRationale || s.desc}
+                        </p>
                       </div>
-                    );
-                  })}
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => assignToPartner(s)}
+                        className="shrink-0 text-xs py-1 px-3 shadow-2xs"
+                      >
+                        Assign
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </Card>
             </div>
