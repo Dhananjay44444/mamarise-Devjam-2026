@@ -1,117 +1,79 @@
-# 🌸 MamaRise — Empowering Postpartum Recovery, Partner Equity & Career Transition
+MamaRise Project Overview and Architecture
 
-MamaRise is an intelligent, compassionate perinatal care and domestic load equity platform built for new mothers and their partners. It combines **Google Gemini 1.5 Flash** for empathetic voice guidance and restorative 4th-trimester nutrition suggestions, a **deterministic clinical safety rule engine** for postpartum triage, and a **micro-learning career restart hub** with active watch-time tracking.
+Project Idea
 
----
+MamaRise is a digital platform designed to address the physical exhaustion, mental overload, and invisible household burden experienced by mothers during the fourth trimester postpartum period. It bridges the gap between maternal recovery, equal domestic chore sharing with partners, and gradual career upskilling. Instead of pushing hustle culture or rigid routines, MamaRise helps mothers monitor their daily recovery, easily delegate chores to their partners, get restorative nutrition advice, and rebuild career confidence through byte-sized video learning tracks.
 
-## 🏗️ System Architecture
 
-- **Frontend (React 18 + TailwindCSS + Lucide Icons + Framer Motion):**
-  - **Mom Portal:** Daily recovery check-in, load balance mirror, Nourish Nudge, Care Circle, video learning tracks.
-  - **Partner Portal:** Domestic load visibility, "I'll handle this" task takeover, real-time sync, recovery notifications.
-  - **Gemini Empathetic Voice Companion:** Hands-free voice commands with serene, validating postpartum responses.
-  - **Career Restart Hub:** 5 comprehensive tracks (UI/UX, Python, Java, Freelancing, Data Analytics) with Page Visibility & real-time study tracking.
-  - **Readiness Portfolio:** Exportable & printable verified career credential.
+Frontend Tools and Technologies
 
-- **Backend (Python FastAPI + SQLAlchemy + SQLite + Google Gemini 1.5):**
-  - **Gemini Voice Assistant (`POST /api/v1/voice/process`):** Analyzes speech transcript, extracts intent, and responds with empathetic companion replies.
-  - **Gemini Nutrition Nudge (`POST /api/v1/nutrition/suggestions`):** Delivers zero-guilt, restorative postpartum nutrition across 4 core pillars.
-  - **Safety Triage Engine (`POST /api/v1/triage/evaluate`):** Multi-tier clinical rule engine (Green / Amber / Red) with automatic partner alerts.
-  - **Shared Household Tasks (`/api/v1/tasks/`):** Domestic chore equity and live mirror status.
+The frontend is built using React 18 for component architecture and state management. Tailwind CSS provides styling and layout responsiveness. Framer Motion handles screen transitions and micro-interactions. Lucide React supplies icons across all dashboards. Recharts is used to visualize recovery capacity trends and task distributions between partners. The Web Speech API powers voice recognition directly inside the browser, allowing hands-free voice logging for busy mothers.
 
----
 
-## 🚀 Quick Start Guide (Running on VS Code / Windows / Mac / Linux)
+Backend Tools and Technologies
 
-### 📋 Prerequisites
-1. **Node.js** (v18 or v20 LTS): [Download from nodejs.org](https://nodejs.org/)
-2. **Python** (v3.10+): [Download from python.org](https://python.org/) *(Optional for full AI backend; frontend includes graceful offline fallbacks)*
+The backend is built with Python using the FastAPI framework for asynchronous high-performance REST APIs. SQLAlchemy 2.0 ORM manages data persistence on an SQLite database. Pydantic v2 handles request validation and response schemas. Uvicorn acts as the ASGI web server. Pytest is used for backend automated testing.
 
----
 
-### Method 1: VS Code (Universal)
+How Gemini 1.5 Flash is Used
 
-#### Step 1: Open Project in VS Code
-1. Open **VS Code**.
-2. Go to **File -> Open Folder...** and select this project folder (`mamarise-project`).
+Google Gemini 1.5 Flash is integrated as a supportive, empathetic companion and nutrition engine. It is used in two key places:
 
-#### Step 2: Start Frontend (React App)
-1. Open a terminal in VS Code (**Terminal -> New Terminal** or `` Ctrl + ` `` / `` Cmd + ` ``).
-2. Install dependencies (first time only):
-   ```bash
-   npm install
-   ```
-3. Start the frontend:
-   ```bash
-   npm start
-   ```
-4. The app will launch in your browser at **`http://localhost:3000`**!
+1. Empathetic Voice Assistant: When a user speaks a command (such as assigning a task to a partner, marking something done, or saying they feel exhausted), Gemini Flash analyzes the transcript. It extracts the structured action and returns a warm, reassuring, guilt-free message that validates the mother's feelings and reminds her to rest.
 
-#### Step 3: Start Backend (FastAPI + Gemini AI) — *In a 2nd Terminal Tab*
-1. Click the **`+`** icon in the VS Code terminal to open a second terminal tab.
-2. Navigate to the backend folder:
-   ```bash
-   cd backend
-   ```
-3. Create and activate a virtual environment:
-   - **On Mac / Linux:**
-     ```bash
-     python3 -m venv venv
-     source venv/bin/activate
-     ```
-   - **On Windows (PowerShell / Command Prompt):**
-     ```powershell
-     python -m venv venv
-     venv\Scripts\activate
-     ```
-4. Install backend dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-5. Launch the backend server:
-   ```bash
-   python run.py
-   ```
-6. Backend runs at **`http://localhost:8000`** (Swagger API Docs at **`http://localhost:8000/docs`**).
+2. Nutrition Nudge Engine: Gemini Flash acts as a perinatal nutritionist. Based on the mother's current energy level, hours of sleep, and postpartum recovery phase, it generates practical, restorative suggestions across four pillars: hydration and electrolytes, iron and tissue recovery, one-handed nursing snacks, and evening calming tonics. It completely avoids calorie counting and focuses purely on healing.
 
----
 
-### Method 2: Double-Click Helper (Windows Only)
-1. **Frontend:** Double-click **`start-windows.bat`** (installs dependencies and opens browser automatically).
-2. **Backend:** Double-click **`start-backend.bat`** (activates venv and starts FastAPI server).
+Python Clinical Safety Rule Engine
 
----
+While Gemini handles empathetic conversational responses, all health triage decisions are governed by a strict, deterministic Python rule engine (SafetyRuleEngine) to prevent artificial intelligence hallucinations in medical contexts.
 
-## 🔑 Demo Logins & Role Switching
+The rule engine evaluates sleep duration, energy level, pain severity, mood, and red-flag symptoms (like high fever or heavy bleeding) into four distinct tiers:
 
-You can switch between roles instantly using the demo buttons on the login page or log in manually:
+Tier 1 - Red Flag Clinical Consultation: Triggered if there is severe pain, fever, or heavy bleeding. The system sets capacity to 15 percent, sends an urgent alert to the partner to take over all chores, and advises contacting an obstetrician or midwife immediately.
 
-| Role | Email | Password | Features |
-| :--- | :--- | :--- | :--- |
-| **Mom Portal** | `aisha@mamarise.app` | `recover123` | Daily Triage, Recovery Pulse, Load Mirror, Nourish Nudge, Care Circle, Career Hub |
-| **Partner Portal** | `rohan@mamarise.app` | `support123` | Partner Sync, "I'll handle this" chore takeover, Recovery alerts, Shared equity |
+Tier 2 - Low Capacity and Urgent Rest: Triggered when sleep is under 5 hours, pain is moderate, or exhaustion is severe. Capacity is scored at 35 percent, chores are flagged for partner takeover, and non-essential tasks are paused.
 
----
+Tier 3 - Steady Recovery: Triggered when sleep is between 5 and 7 hours with moderate energy. Capacity is set to 65 percent, and gentle 15-minute micro-learning sessions are suggested.
 
-## 🧪 Running Automated Tests
+Tier 4 - High Capacity and Return Ready: Triggered when restorative sleep and comfort are high. Capacity reaches 90 percent, and full career restart tracks (UI/UX, Python, Java, Data Analytics, Freelancing) are unlocked.
 
-### Frontend Tests (Jest / React Testing Library)
-```bash
-npm test -- --watchAll=false
-```
-*Tests state management, auth service, voice intent parsing, and video tracking.*
 
-### Backend Tests (Pytest)
-```bash
-# With backend venv activated:
-pytest backend/tests/
-```
-*Tests FastAPI endpoints, SQLite persistence, rule triage tiers, and Gemini fallback handlers.*
+End-to-End Code Flow
 
----
+1. User Action: The user performs an action in the React app, such as completing a daily recovery check-in, speaking a voice command, or opening the nutrition section.
 
-## 🌟 Key Innovations for DevJam 2026
-1. **Deterministic Clinical Safety First:** Triage rules are strictly clinical (never hallucinatory LLM advice for medical danger signs).
-2. **Gemini 1.5 Flash Companion:** Empathetic voice validation and fourth-trimester restorative nutrition suggestions.
-3. **True Domestic Equity:** Bridges invisible maternal cognitive load with one-tap partner task delegation.
-4. **Adaptive Career Readiness:** Byte-sized video learning designed for postpartum energy levels with verified credential generation.
+2. Frontend Dispatch: React calls the API client in dataService.js or parses initial intents locally for immediate UI responsiveness.
+
+3. Backend API Route: FastAPI receives the request at the corresponding endpoint (/api/v1/voice/process, /api/v1/triage/evaluate, or /api/v1/nutrition/suggestions).
+
+4. Processing and AI Integration:
+For voice and nutrition requests, the backend calls GeminiService to invoke Google Gemini 1.5 Flash with custom clinical system prompts.
+For recovery check-ins, the backend runs SafetyRuleEngine to calculate the deterministic capacity score and determine if partner intervention is needed.
+
+5. Database Persistence: Voice interactions, recovery records, nutrition recommendations, and shared tasks are stored in the SQLite database via SQLAlchemy models.
+
+6. Response and Live UI Update: The backend returns structured JSON to the frontend. React updates the central store, updates the recovery score, displays Gemini's empathetic message, and syncs shared domestic tasks to the Partner Dashboard.
+
+
+How to Run the Project
+
+1. Frontend:
+Open a terminal in the root directory and run:
+npm install
+npm start
+The application will open at http://localhost:3000
+
+2. Backend:
+Open a second terminal, navigate into the backend directory, and run:
+python -m venv venv
+On Mac or Linux run: source venv/bin/activate
+On Windows run: venv\Scripts\activate
+pip install -r requirements.txt
+python run.py
+The backend server will run at http://localhost:8000 (API documentation at http://localhost:8000/docs)
+
+3. Demo Accounts:
+Mom Portal: aisha@mamarise.app (Password: recover123)
+Partner Portal: rohan@mamarise.app (Password: support123)
+Quick role switch buttons are also available directly on the login page.
