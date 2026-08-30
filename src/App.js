@@ -176,9 +176,9 @@ function MamaRise() {
 
   return (
     <>
-      <AnimatePresence mode="wait">
-        <React.Fragment key={screen}>{pages[screen]}</React.Fragment>
-      </AnimatePresence>
+      <div key={screen} className="w-full">
+        {pages[screen] || pages.dashboard}
+      </div>
       <AnimatePresence>
         {celebrate && (
           <Celebration
@@ -197,6 +197,7 @@ function MamaRise() {
 
 function AppRoutes() {
   const go = useGo();
+  const { state } = useAppState();
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   const handleVoiceNavigate = (target) => {
@@ -236,13 +237,17 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to={PATHS.landing} replace />} />
       </Routes>
 
-      {/* Global Voice Assistant Floating Trigger & Modal */}
-      <VoiceFloatingTrigger onOpen={() => setIsVoiceModalOpen(true)} />
-      <VoiceCommandModal
-        isOpen={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
-        onNavigate={handleVoiceNavigate}
-      />
+      {/* Global Voice Assistant Floating Trigger & Modal - Only visible when authenticated */}
+      {state.isAuthenticated && (
+        <>
+          <VoiceFloatingTrigger onOpen={() => setIsVoiceModalOpen(true)} />
+          <VoiceCommandModal
+            isOpen={isVoiceModalOpen}
+            onClose={() => setIsVoiceModalOpen(false)}
+            onNavigate={handleVoiceNavigate}
+          />
+        </>
+      )}
     </>
   );
 }

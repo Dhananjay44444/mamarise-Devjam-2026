@@ -218,16 +218,16 @@ export function VoiceCommandModal({ isOpen, onClose, onNavigate }) {
 
                 <p className="ff-display text-base font-bold mb-1" style={{ color: C.ink }}>
                   {isListening
-                    ? "Listening... Speak now (Live speech-to-text active)"
+                    ? "Listening... (Auto-submits after 4s silence)"
                     : isProcessing
-                      ? "Interpreting speech intent..."
+                      ? "Interpreting with Gemini AI..."
                       : "Click Mic to Speak"}
                 </p>
 
                 <p className="ff-body text-xs text-stone-500 max-w-sm">
                   {isListening
-                    ? "Speak into your microphone. Say anything like 'I completed cooking' or 'Need help tomorrow'"
-                    : "Click mic → speak → see live transcript in real-time"}
+                    ? "Speak naturally. When you finish, the assistant auto-pauses in 4 seconds and executes via Gemini AI."
+                    : "Hands-free voice recognition with automatic silence detection & AI intent parsing."}
                 </p>
               </div>
 

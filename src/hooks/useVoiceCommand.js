@@ -27,11 +27,32 @@ export function useVoiceCommand(onNavigate) {
 
   const isSupported = diagnostics.isSupported;
 
+  const silenceTimerRef = useRef(null);
+  const currentTranscriptRef = useRef("");
+
+  // Clean up silence timer
+  const clearSilenceTimer = useCallback(() => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  }, []);
+
+  // Stop listening session
+  const stopListening = useCallback(() => {
+    clearSilenceTimer();
+    if (serviceRef.current) {
+      serviceRef.current.stop();
+    }
+    setIsListening(false);
+  }, [clearSilenceTimer]);
+
   // Process a final transcript into intent with Gemini AI support
   const processTranscript = useCallback(
     async (transcriptText) => {
       if (!transcriptText || !transcriptText.trim()) return null;
 
+      clearSilenceTimer();
       setIsProcessing(true);
       setVoiceError(null);
 
@@ -73,68 +94,88 @@ export function useVoiceCommand(onNavigate) {
         return null;
       }
     },
-    [state, dispatch, onNavigate]
+    [state, dispatch, onNavigate, clearSilenceTimer]
   );
+
+  // Reset 4-second inactivity/silence timer
+  const resetSilenceTimer = useCallback(() => {
+    clearSilenceTimer();
+    silenceTimerRef.current = setTimeout(() => {
+      const textToProcess = currentTranscriptRef.current ? currentTranscriptRef.current.trim() : "";
+      stopListening();
+      if (textToProcess) {
+        setFinalTranscript(textToProcess);
+        processTranscript(textToProcess);
+      }
+    }, 4000);
+  }, [clearSilenceTimer, stopListening, processTranscript]);
 
   // Start listening session
   const startListening = useCallback(async () => {
+    clearSilenceTimer();
+    currentTranscriptRef.current = "";
     setVoiceError(null);
     setLiveTranscript("");
     setFinalTranscript("");
     setLastCommandResult(null);
 
+    // Start 4-second initial silence timer
+    resetSilenceTimer();
+
     await serviceRef.current.start({
       onStart: () => {
         setIsListening(true);
+        resetSilenceTimer();
       },
       onTranscript: (currentText, isFinal) => {
+        currentTranscriptRef.current = currentText;
         setLiveTranscript(currentText);
+        // Refresh 4-second silence timer on every chunk of speech
+        resetSilenceTimer();
       },
       onFinal: (completedText) => {
+        currentTranscriptRef.current = completedText;
         setFinalTranscript(completedText);
         setLiveTranscript(completedText);
+        clearSilenceTimer();
         processTranscript(completedText);
       },
       onError: (err) => {
+        clearSilenceTimer();
         setIsListening(false);
         setVoiceError(err);
       },
       onEnd: () => {
+        clearSilenceTimer();
         setIsListening(false);
       },
       onDiagnostic: (diagInfo) => {
         setDiagnostics((prev) => ({ ...prev, ...diagInfo }));
       },
     });
-  }, [processTranscript]);
-
-  // Stop listening session
-  const stopListening = useCallback(() => {
-    if (serviceRef.current) {
-      serviceRef.current.stop();
-    }
-    setIsListening(false);
-  }, []);
+  }, [processTranscript, resetSilenceTimer, clearSilenceTimer]);
 
   // Execute direct command (e.g. for testing / preset phrases)
   const executeCommand = useCallback(
     (text) => {
+      clearSilenceTimer();
       setLiveTranscript(text);
       setFinalTranscript(text);
       return processTranscript(text);
     },
-    [processTranscript]
+    [processTranscript, clearSilenceTimer]
   );
 
   const clearError = useCallback(() => setVoiceError(null), []);
 
   useEffect(() => {
     return () => {
+      clearSilenceTimer();
       if (serviceRef.current) {
         serviceRef.current.abort();
       }
     };
-  }, []);
+  }, [clearSilenceTimer]);
 
   return {
     isSupported,
