@@ -38,18 +38,31 @@ export function useVoiceCommand(onNavigate) {
     }
   }, []);
 
-  // Process a final transcript into intent with Gemini AI support
+  // Process a final transcript into intent with Gemini AI support (Instant Synchronous UI Dispatch)
   const processTranscript = useCallback(
-    async (transcriptText) => {
+    (transcriptText) => {
       if (!transcriptText || !transcriptText.trim()) return null;
 
       clearSilenceTimer();
-      setIsProcessing(true);
       setVoiceError(null);
 
       try {
-        // Parse locally first for instant UI response
+        // Parse locally first for instant synchronous UI response
         const parsed = parseVoiceIntent(transcriptText, state);
+
+        // Instantly dispatch to global React state store so dashboard updates immediately
+        if (parsed.stateAction) {
+          if (parsed.stateAction.type === "VOICE_NAVIGATE") {
+            if (onNavigate) {
+              onNavigate(parsed.stateAction.payload.target);
+            }
+          } else {
+            dispatch(parsed.stateAction);
+          }
+        }
+
+        setLastCommandResult(parsed);
+        setIsProcessing(false);
 
         // Fetch empathetic reply from Gemini backend in background/parallel
         sendVoiceCommandToBackend(transcriptText, state.userRole, state)
@@ -63,18 +76,6 @@ export function useVoiceCommand(onNavigate) {
           })
           .catch(() => {});
 
-        if (parsed.stateAction) {
-          if (parsed.stateAction.type === "VOICE_NAVIGATE") {
-            if (onNavigate) {
-              onNavigate(parsed.stateAction.payload.target);
-            }
-          } else {
-            dispatch(parsed.stateAction);
-          }
-        }
-
-        setLastCommandResult(parsed);
-        setIsProcessing(false);
         return parsed;
       } catch (err) {
         setIsProcessing(false);
