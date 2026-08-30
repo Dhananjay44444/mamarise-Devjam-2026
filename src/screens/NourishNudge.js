@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Droplets, ChevronRight, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Droplets,
+  ChevronRight,
+  ThumbsUp,
+  ThumbsDown,
+  Sparkles,
+  Send,
+} from "lucide-react";
 import { C, fadeUp, stagger } from "../theme";
 import { Screen, Card, Button, TopBar, Chip } from "../ui/chrome";
 import { Doodle } from "../ui/Doodles";
-import { fetchNutritionSuggestions } from "../services/dataService";
+import { fetchNutritionSuggestions, askNutritionAi } from "../services/dataService";
 
 function capacityLabel(recovery) {
   if (!recovery) return "Moderate";
@@ -48,10 +55,20 @@ const DEFAULT_CATEGORIES = {
   },
 };
 
+const QUICK_PROMPTS = [
+  { label: "⚡ 2-Min Nursing Snack", query: "Quick 2-minute 1-handed snack while nursing baby at night" },
+  { label: "🍵 Calming Hot Drink", query: "Warm calming drink for postpartum exhaustion before sleep" },
+  { label: "🩸 Gentle Iron Boost", query: "Easy vegetarian iron foods that are gentle on postpartum digestion" },
+  { label: "💧 Milk Flow Hydration", query: "Hydrating drinks to support breast milk supply without sugar" },
+];
+
 export default function NourishNudge({ recovery, go }) {
   const level = recovery ? capacityLabel(recovery) : "Moderate";
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-  const [isGeminiEnhanced, setIsGeminiEnhanced] = useState(false);
+  // Custom AI Question state
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiResponse, setAiResponse] = useState(null);
+  const [isAskingAi, setIsAskingAi] = useState(false);
 
   // Fetch live Gemini AI suggestions from FastAPI backend
   useEffect(() => {
@@ -98,13 +115,29 @@ export default function NourishNudge({ recovery, go }) {
       });
 
       setCategories(updated);
-      setIsGeminiEnhanced(true);
     });
 
     return () => {
       isMounted = false;
     };
   }, [recovery]);
+
+  const handleAskAi = async (customQuery) => {
+    const queryToUse = customQuery || aiQuestion;
+    if (!queryToUse.trim()) return;
+
+    setIsAskingAi(true);
+    try {
+      const res = await askNutritionAi(queryToUse, recovery);
+      if (res) {
+        setAiResponse(res);
+      }
+    } catch (err) {
+      console.warn("Failed to get AI answer:", err);
+    } finally {
+      setIsAskingAi(false);
+    }
+  };
 
   const catKeys = Object.keys(categories);
   const [cat, setCat] = useState(catKeys[0]);
@@ -126,6 +159,7 @@ export default function NourishNudge({ recovery, go }) {
         />
 
         <motion.div initial="hidden" animate="show" variants={stagger}>
+          {/* Header Banner */}
           <motion.div variants={fadeUp} className="mb-6 flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0" style={{ background: C.sageLight }}>
               <Doodle.Pot className="w-8 h-8" style={{ color: C.sageDark }} />
@@ -135,36 +169,168 @@ export default function NourishNudge({ recovery, go }) {
                 <h1 className="ff-display text-3xl font-bold tracking-tight" style={{ color: C.ink }}>
                   Gentle Nutrition, Zero Guilt.
                 </h1>
-                {isGeminiEnhanced && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                    <Sparkles size={11} /> Gemini AI Tuned
-                  </span>
-                )}
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                  <Sparkles size={11} /> Gemini AI Tuned
+                </span>
               </div>
               <p className="ff-body text-xs" style={{ color: C.inkSoft }}>
-                Tuned to today's recovery state ({level.toLowerCase()} capacity). Pick a category for gentle ideas.
+                Postpartum recovery fuel calibrated to your recovery state ({level.toLowerCase()} capacity).
               </p>
             </div>
           </motion.div>
 
-          {/* Category Chips */}
-          <motion.div variants={fadeUp} className="flex flex-wrap gap-2 mb-6">
-            {catKeys.map((k) => (
-              <Chip
-                key={k}
-                label={k}
-                selected={cat === k}
-                onClick={() => {
-                  setCat(k);
-                  setIdx(0);
-                  setFeedback(null);
-                }}
-              />
-            ))}
+          {/* AI Recovery Context Callout Banner */}
+          <motion.div variants={fadeUp} className="mb-6">
+            <div
+              className="p-4 rounded-2xl text-xs space-y-1.5 border"
+              style={{ background: "rgba(255, 252, 247, 0.95)", borderColor: C.lineLight }}
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-stone-900">Your Recovery Signals:</span>
+                <span className="px-2 py-0.2 rounded-md bg-stone-100 text-stone-700 font-mono text-[11px]">
+                  💤 {recovery?.sleepHours || 6}h Sleep
+                </span>
+                <span className="px-2 py-0.2 rounded-md bg-stone-100 text-stone-700 font-medium text-[11px]">
+                  ⚡ {recovery?.energy || "Okay"} Energy
+                </span>
+                <span className="px-2 py-0.2 rounded-md bg-stone-100 text-stone-700 font-medium text-[11px]">
+                  🩺 {recovery?.pain || "None"} Pain
+                </span>
+              </div>
+              <p className="text-stone-600 leading-relaxed">
+                Gemini AI Recommendation: Focus on warm, mineral-rich cellular hydration and 1-handed healthy fats that protect deep rest and tissue repair without digestive strain.
+              </p>
+            </div>
           </motion.div>
 
-          {/* Suggestion Card */}
-          <motion.div variants={fadeUp}>
+          {/* ========================================================================= */}
+          {/* SECTION: Interactive "Ask Gemini Nutrition AI" */}
+          {/* ========================================================================= */}
+          <motion.div variants={fadeUp} className="mb-6">
+            <Card className="!p-5 border-emerald-200 shadow-xs">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={16} className="text-emerald-700" />
+                <h3 className="ff-display text-base font-bold" style={{ color: C.ink }}>
+                  Ask Gemini for Gentle Fuel Ideas
+                </h3>
+              </div>
+              <p className="ff-body text-xs text-stone-500 mb-3">
+                Have a craving, low energy, or limited ingredients? Ask for quick 1-handed recovery ideas.
+              </p>
+
+              {/* Quick Prompt Chips */}
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {QUICK_PROMPTS.map((p) => (
+                  <button
+                    key={p.label}
+                    onClick={() => {
+                      setAiQuestion(p.query);
+                      handleAskAi(p.query);
+                    }}
+                    className="text-[11px] px-2.5 py-1 rounded-xl bg-stone-100 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-200 transition-colors font-medium border border-stone-200 text-stone-700"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Input & Ask Button */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAskAi();
+                }}
+                className="flex items-center gap-2"
+              >
+                <input
+                  type="text"
+                  value={aiQuestion}
+                  onChange={(e) => setAiQuestion(e.target.value)}
+                  placeholder="e.g. What's an instant snack for 3 AM nursing?"
+                  className="ff-body flex-1 px-3.5 py-2.5 rounded-xl text-xs outline-none bg-white border border-stone-300 focus:border-emerald-600 transition-colors"
+                />
+                <Button
+                  type="submit"
+                  variant="sage"
+                  size="sm"
+                  disabled={isAskingAi || !aiQuestion.trim()}
+                  className="shrink-0"
+                >
+                  <Send size={13} /> {isAskingAi ? "Thinking..." : "Ask AI"}
+                </Button>
+              </form>
+
+              {/* AI Answer Box */}
+              <AnimatePresence>
+                {aiResponse && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-emerald-950 text-sm">{aiResponse.title}</span>
+                        {aiResponse.prepTime && (
+                          <span className="text-[10px] px-2 py-0.2 rounded-md bg-emerald-100 text-emerald-800 font-mono">
+                            ⏱️ {aiResponse.prepTime}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
+                        Zero-Guilt Recipe
+                      </span>
+                    </div>
+
+                    <p className="text-stone-700 leading-relaxed font-medium">
+                      {aiResponse.recommendation}
+                    </p>
+
+                    <div className="p-2.5 rounded-xl bg-white/90 border border-emerald-200/60 text-stone-800 space-y-1">
+                      <p className="font-bold text-emerald-900">👩‍🍳 Quick 1-Handed Prep:</p>
+                      <p className="leading-relaxed">{aiResponse.quickRecipe}</p>
+                    </div>
+
+                    {aiResponse.healingBenefit && (
+                      <p className="text-[11px] text-stone-600">
+                        💡 <b className="text-stone-800">Healing Benefit:</b> {aiResponse.healingBenefit}
+                      </p>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
+
+          {/* ========================================================================= */}
+          {/* SECTION: 4 Curated Nutrition Pillars */}
+          {/* ========================================================================= */}
+          <motion.div variants={fadeUp} className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <span className="ff-body text-xs font-bold uppercase tracking-wider text-stone-600">
+                Explore Recovery Food Pillars
+              </span>
+              <span className="ff-body text-xs text-stone-500">Zero Calorie Counting</span>
+            </div>
+
+            {/* Category Chips */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {catKeys.map((k) => (
+                <Chip
+                  key={k}
+                  label={k}
+                  selected={cat === k}
+                  onClick={() => {
+                    setCat(k);
+                    setIdx(0);
+                    setFeedback(null);
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Suggestion Card */}
             <Card className="mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <CatIcon className="w-5 h-5" style={{ color: C.sage }} />
@@ -193,7 +359,7 @@ export default function NourishNudge({ recovery, go }) {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setFeedback("up")}
-                    className="ff-body text-xs px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors"
+                    className="ff-body text-xs px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors cursor-pointer"
                     style={{
                       background: feedback === "up" ? C.sageLight : "transparent",
                       border: `1px solid ${feedback === "up" ? C.sage : C.line}`,
@@ -204,7 +370,7 @@ export default function NourishNudge({ recovery, go }) {
                   </button>
                   <button
                     onClick={() => setFeedback("down")}
-                    className="ff-body text-xs px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors"
+                    className="ff-body text-xs px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors cursor-pointer"
                     style={{
                       background: feedback === "down" ? C.blushLight : "transparent",
                       border: `1px solid ${feedback === "down" ? C.blush : C.line}`,

@@ -64,3 +64,18 @@ async def get_nutrition_suggestions(
         suggestions=pillar_suggestions,
         generated_at=datetime.now(timezone.utc).isoformat()
     )
+
+@router.post("/ask")
+async def ask_nutrition_ai(payload: dict):
+    """
+    Answers Mom's custom postpartum recovery nutrition questions with zero calorie counting,
+    zero guilt, and fast 1-handed preparation advice powered by Gemini AI.
+    """
+    question = payload.get("question", "")
+    recovery = payload.get("recovery", {})
+
+    result = await GeminiService.answer_nutrition_query(
+        question=question,
+        recovery=recovery
+    )
+    return {"status": "success", "result": result}

@@ -78,6 +78,26 @@ def test_nutrition_nudge_api():
     assert "calming_tonics" in pillars
 
 
+def test_ask_nutrition_ai():
+    payload = {
+        "question": "What is a 2-minute 1-handed snack while nursing?",
+        "recovery": {
+            "sleepHours": 5.0,
+            "energy": "Low"
+        }
+    }
+    response = client.post("/api/v1/nutrition/ask", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    result = data["result"]
+    assert "title" in result
+    assert "recommendation" in result
+    assert "quickRecipe" in result
+    assert "healingBenefit" in result
+
+
+
 def test_voice_command_processing():
     payload = {
         "transcript": "Rohan please take over folding the laundry and washing baby bottles",

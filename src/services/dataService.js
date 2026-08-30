@@ -71,6 +71,40 @@ export async function fetchNutritionSuggestions(recovery = {}) {
 }
 
 /**
+ * Interactive Q&A for postpartum gentle nutrition with zero diet culture or calorie counting
+ */
+export async function askNutritionAi(question = "", recovery = {}) {
+  try {
+    const res = await fetch(`${API_BASE}/nutrition/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question,
+        recovery,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status === "success" && data.result) {
+        return data.result;
+      }
+    }
+  } catch (err) {
+    console.warn("[API] Backend ask nutrition request failed, using local AI fallback", err);
+  }
+
+  // Local fallback response
+  return {
+    title: "Warm Tahini, Banana & Crushed Almond Fuel",
+    recommendation: "When fatigue is high, combining natural potassium from fruit with plant lipids prevents sudden blood sugar crashes during feeding shifts.",
+    quickRecipe: "Slice 1 banana, drizzle 1 tablespoon warm tahini or peanut butter, and top with soaked almonds.",
+    healingBenefit: "Delivers instant bioavailable magnesium and healthy fats for cellular repair in 90 seconds.",
+    prepTime: "2 mins",
+  };
+}
+
+/**
  * Sends spoken voice transcript to Gemini AI backend for calm empathetic reply and intent extraction
  */
 export async function sendVoiceCommandToBackend(transcript, currentRole = "mom", userContext = {}) {

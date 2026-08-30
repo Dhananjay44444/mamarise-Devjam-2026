@@ -144,6 +144,60 @@ class GeminiService:
         # Fallback curated clinical nutrition suggestions
         return cls._fallback_nutrition_suggestions(current_energy, sleep_hours)
 
+    @classmethod
+    async def answer_nutrition_query(
+        cls,
+        question: str,
+        recovery: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """
+        Answers Mom's custom postpartum gentle nutrition & recovery questions using Gemini AI.
+        Follows clinical principles: zero diet culture, no calorie counting, fast prep, warm digestion.
+        """
+        recovery = recovery or {}
+        sleep_hours = recovery.get("sleepHours", 6.0)
+        energy = recovery.get("energy", "Okay")
+
+        system_instruction = (
+            "You are an empathetic, clinical postpartum nutritionist for MamaRise.\n"
+            "Answer the mother's question with warm, practical, 0-guilt guidance.\n"
+            "Rules:\n"
+            "1. Absolutely zero calorie counting, weight-loss talk, or diet culture.\n"
+            "2. Focus on warm digestion, cellular hydration, tissue healing, steady blood sugar, and 1-handed low-effort prep.\n"
+            "3. Return strictly a JSON object with keys:\n"
+            "- 'title': Short, appetizing recommendation title\n"
+            "- 'recommendation': 2-3 sentence empathetic, practical advice\n"
+            "- 'quickRecipe': 1-2 sentence immediate preparation steps\n"
+            "- 'healingBenefit': 1 sentence physiological benefit (e.g. 'Stabilizes blood sugar and boosts lactation hydration without insulin spike')\n"
+            "- 'prepTime': e.g. '2 mins', '5 mins'\n"
+            "Return strictly valid JSON without markdown formatting."
+        )
+
+        prompt = (
+            f"Mother's Question: {question}\n"
+            f"Her Recovery Context: Sleep={sleep_hours}h, Energy={energy}"
+        )
+
+        raw_response = await cls._call_gemini_api(prompt, system_instruction)
+
+        if raw_response:
+            try:
+                cleaned = raw_response.replace("```json", "").replace("```", "").strip()
+                data = json.loads(cleaned)
+                if isinstance(data, dict) and "title" in data:
+                    return data
+            except Exception as e:
+                logger.warning(f"Failed to parse Gemini nutrition answer: {e}")
+
+        # Intelligent clinical fallback
+        return {
+            "title": "Warm Tahini, Banana & Crushed Almond Fuel",
+            "recommendation": "When fatigue is high, combining natural potassium from fruit with plant lipids prevents sudden blood sugar crashes during feeding shifts.",
+            "quickRecipe": "Slice 1 banana, drizzle 1 tablespoon warm tahini or peanut butter, and top with soaked almonds.",
+            "healingBenefit": "Delivers instant bioavailable magnesium and healthy fats for cellular repair in 90 seconds.",
+            "prepTime": "2 mins"
+        }
+
     @staticmethod
     def _fallback_voice_interpreter(transcript: str, role: str) -> Dict[str, Any]:
         lower = transcript.lower()
